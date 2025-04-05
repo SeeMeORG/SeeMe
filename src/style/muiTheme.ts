@@ -4,7 +4,7 @@ import { createTheme } from "@mui/material/styles";
 export const muiTheme = createTheme({
   palette: {
     background: {
-      default: "#ffffff",
+      default: 'linear-gradient(to right, #ff7e5f, #feb47b)',
       paper: "#fff",
     },
     text: { primary: "#000000", secondary: "#ffffff", disabled: grey[800] },
@@ -29,7 +29,7 @@ export const muiTheme = createTheme({
       styleOverrides: {
         root: {
           paddingLeft: '0px !important',
-          minHeight: '40px !important',
+          minHeight: '50px !important',
         },
       },
     },

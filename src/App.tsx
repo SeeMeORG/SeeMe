@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
-import { Header } from "./components/header/Header";
-import { MainBody } from "./components/main/MainBody";
 import { useState } from "react";
+import { Outlet } from "react-router-dom";
+import { Header } from "./components/header/Header";
 import { Welcome } from "./components/main/Welcome";
 
 export const App = () => {
@@ -10,7 +10,7 @@ export const App = () => {
   return (
     <Box>
       <Header />
-      <MainBody />
+      <Outlet />
       {openWelcome && <Welcome setWelcome={setWelcome} />}
     </Box>
   );
