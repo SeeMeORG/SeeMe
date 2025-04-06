@@ -1,4 +1,4 @@
-import { Mic, Videocam } from "@mui/icons-material";
+import { Mic } from "@mui/icons-material";
 import {
   Box,
   Grid,
@@ -10,10 +10,7 @@ export const MainBody = () => {
   return (
     <Box
       sx={{
-        height: "91vh",
-        bgcolor: "#111",
-        overflow: "hidden",
-        boxSizing: "border-box",
+        height: "92vh",
         m: 0,
       }}
     >
@@ -22,7 +19,6 @@ export const MainBody = () => {
           <Box
             sx={{
               height: "100%",
-              borderRadius: "16px",
               overflow: "hidden",
               position: "relative",
               backgroundColor: "#000",
@@ -36,7 +32,6 @@ export const MainBody = () => {
               sx={{
                 width: "95%",
                 height: "90%",
-                borderRadius: 3,
                 background: "linear-gradient(45deg, #111, #222)",
                 display: "flex",
                 alignItems: "center",
@@ -80,19 +75,14 @@ export const MainBody = () => {
               <IconButton sx={{ color: "#fff" }}>
                 <Mic fontSize="large" />
               </IconButton>
-              <IconButton sx={{ color: "#fff" }}>
-                <Videocam fontSize="large" />
-              </IconButton>
+             
             </Box>
           </Box>
         </Grid>
-
-        {/* Participant 2 */}
         <Grid size={{xs:12, sm:12, md:6}} sx={{border: "2px solid", borderColor: "primary.main"}}>
           <Box
             sx={{
               height: "100%",
-              borderRadius: "16px",
               overflow: "hidden",
               position: "relative",
               backgroundColor: "#222",
@@ -106,7 +96,6 @@ export const MainBody = () => {
               sx={{
                 width: "95%",
                 height: "90%",
-                borderRadius: 3,
                 background: "linear-gradient(45deg, #222, #333)",
                 display: "flex",
                 alignItems: "center",
@@ -130,29 +119,6 @@ export const MainBody = () => {
               <Typography color="#fff" fontWeight="bold">
                 Friend
               </Typography>
-            </Box>
-
-            <Box
-              position="absolute"
-              bottom={12}
-              left="50%"
-              sx={{
-                transform: "translateX(-50%)",
-                backdropFilter: "blur(10px)",
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                borderRadius: "30px",
-                px: 2,
-                py: 1,
-                display: "flex",
-                gap: 2,
-              }}
-            >
-              <IconButton sx={{ color: "#fff" }}>
-                <Mic fontSize="large" />
-              </IconButton>
-              <IconButton sx={{ color: "#fff" }}>
-                <Videocam fontSize="large" />
-              </IconButton>
             </Box>
           </Box>
         </Grid>
