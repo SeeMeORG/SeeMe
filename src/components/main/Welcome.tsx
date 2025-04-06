@@ -33,11 +33,9 @@ export const Welcome = ({ setWelcome }: IWelcomeProps) => {
             position: "relative",
             width: "100%",
             height: "100vh",
-            overflow: "hidden",
             backgroundColor: "transparent",
           }}
         >
-          {/* Left or Top Avatar */}
           <Box
             sx={{
               position: "absolute",
@@ -50,10 +48,10 @@ export const Welcome = ({ setWelcome }: IWelcomeProps) => {
               transform: {
                 xs: animate
                   ? "translate(-50%, -250%)"
-                  : "translate(-50%, -100%)", // vertical movement
+                  : "translate(-50%, -100%)",
                 md: animate
                   ? "translate(-600%, -50%)"
-                  : "translate(-100%, -50%)", // horizontal movement
+                  : "translate(-100%, -50%)",
               },
             }}
           >
@@ -64,7 +62,6 @@ export const Welcome = ({ setWelcome }: IWelcomeProps) => {
             />
           </Box>
 
-          {/* Right or Bottom Avatar */}
           <Box
             sx={{
               position: "absolute",
@@ -87,7 +84,6 @@ export const Welcome = ({ setWelcome }: IWelcomeProps) => {
             />
           </Box>
 
-          {/* Center Logo */}
           <Box
             sx={{
               position: "absolute",
