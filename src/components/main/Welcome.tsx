@@ -1,11 +1,25 @@
-import { Avatar, Box, Dialog } from "@mui/material";
+import { Box, Dialog } from "@mui/material";
 import { useEffect, useState } from "react";
 import logo from "../../assets/LOGO.png";
 import mannu from "../../assets/MannuGit.jpg";
 import vishal from "../../assets/VishalGit.jpg";
+import { GenericAvatar } from "../../shared/GenericComponents";
+import { IWelcomeProps } from "../../shared/interface";
 import { WelcomeContainer } from "../../style/CommonStyles";
 import { muiTheme } from "../../style/muiTheme";
-import { IWelcomeProps } from "../interface";
+
+const AVATARS = [
+  {
+    title: "Mannu Jaggi",
+    src: mannu,
+    ifLeft: true,
+  },
+  {
+    title: "Vishal Kumar",
+    src: vishal,
+    ifLeft: false,
+  },
+];
 
 export const Welcome = ({ setWelcome }: IWelcomeProps) => {
   const [animate, setAnimate] = useState(false);
@@ -36,53 +50,15 @@ export const Welcome = ({ setWelcome }: IWelcomeProps) => {
             backgroundColor: "transparent",
           }}
         >
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "transform 1s ease-in-out",
-              transform: {
-                xs: animate
-                  ? "translate(-50%, -250%)"
-                  : "translate(-50%, -100%)",
-                md: animate
-                  ? "translate(-600%, -50%)"
-                  : "translate(-100%, -50%)",
-              },
-            }}
-          >
-            <Avatar
-              src={mannu}
-              alt="Mannu Jaggi"
-              sx={{ width: 70, height: 70 }}
+          {AVATARS.map((avatar) => (
+            <GenericAvatar
+              key={avatar.title}
+              isLeft={avatar.ifLeft}
+              animate={animate}
+              src={avatar.src}
+              alt={avatar.title}
             />
-          </Box>
-
-          <Box
-            sx={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "transform 1s ease-in-out",
-              transform: {
-                xs: animate ? "translate(-50%, 150%)" : "translate(-50%, 0%)",
-                md: animate ? "translate(600%, -50%)" : "translate(0%, -50%)",
-              },
-            }}
-          >
-            <Avatar
-              src={vishal}
-              alt="Vishal Kumar"
-              sx={{ width: 70, height: 70 }}
-            />
-          </Box>
+          ))}
 
           <Box
             sx={{
