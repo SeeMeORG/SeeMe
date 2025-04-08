@@ -1,109 +1,103 @@
-import React, { useEffect, useRef } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Mic } from "@mui/icons-material";
 import { Box, Grid, IconButton, Typography } from "@mui/material";
+import React, { useEffect, useRef } from "react";
+import SimplePeer from "simple-peer";
 
-const SIGNAL_SERVER_URL = "ws://localhost:8080";
+const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
-export const MainBody = () => {
-  const localVideoRef = useRef(null);
-  const remoteVideoRef = useRef(null);
-  const ws = useRef(null);
-  const peerConnection = useRef(null);
-  const localStream = useRef(null);
-
-  const createPeerConnection = () => {
-    peerConnection.current = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    });
-
-    peerConnection.current.onicecandidate = (event) => {
-      if (event.candidate) {
-        ws.current.send(
-          JSON.stringify({ type: "candidate", candidate: event.candidate })
-        );
-      }
-    };
-
-    peerConnection.current.ontrack = (event) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = event.streams[0];
-      }
-    };
-
-    localStream.current.getTracks().forEach((track) => {
-      peerConnection.current.addTrack(track, localStream.current);
-    });
-  };
+export const MainBody: React.FC = () => {
+  const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const ws = useRef<WebSocket | null>(null);
+  const peer = useRef<SimplePeer.Instance | null>(null);
+  const localStream = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     const init = async () => {
-      localStream.current = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
+      try {
+        // Get user media
+        localStream.current = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: true,
+        });
+
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = localStream.current;
+        }
+
+        // Connect to signaling server
+        ws.current = new WebSocket(SIGNAL_SERVER_URL);
+
+        ws.current.onopen = () => {
+          console.log("Connected to signaling server");
+          ws.current?.send(JSON.stringify({ type: "ready" }));
+        };
+
+        ws.current.onmessage = async (message) => {
+          const data = JSON.parse(message.data);
+
+          switch (data.type) {
+            case "ready":
+              if (!peer.current) {
+                // This peer initiates
+                peer.current = new SimplePeer({
+                  initiator: true,
+                  trickle: false,
+                  stream: localStream.current!,
+                });
+                setupPeerEvents();
+              }
+              break;
+
+            case "signal":
+              if (!peer.current) {
+                // This peer responds
+                peer.current = new SimplePeer({
+                  initiator: false,
+                  trickle: false,
+                  stream: localStream.current!,
+                });
+                setupPeerEvents();
+              }
+              peer.current.signal(data.signal);
+              break;
+
+            default:
+              break;
+          }
+        };
+      } catch (error) {
+        console.error("Error accessing media devices:", error);
+      }
+    };
+
+    const setupPeerEvents = () => {
+      if (!peer.current) return;
+
+      peer.current.on("signal", (signalData: any) => {
+        // Send SDP or ICE candidates
+        ws.current?.send(
+          JSON.stringify({ type: "signal", signal: signalData })
+        );
       });
 
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = localStream.current;
-      }
-
-      ws.current = new WebSocket(SIGNAL_SERVER_URL);
-
-      ws.current.onopen = () => {
-        console.log("Connected to signaling server");
-        ws.current.send(JSON.stringify({ type: "ready" }));
-      };
-
-      ws.current.onmessage = async (message) => {
-        const data = JSON.parse(message.data);
-
-        switch (data.type) {
-          case "ready":
-            if (!peerConnection.current) {
-              createPeerConnection();
-              const offer = await peerConnection.current.createOffer();
-              await peerConnection.current.setLocalDescription(offer);
-              ws.current.send(JSON.stringify({ type: "offer", offer }));
-            }
-            break;
-
-          case "offer":
-            if (!peerConnection.current) createPeerConnection();
-            await peerConnection.current.setRemoteDescription(
-              new RTCSessionDescription(data.offer)
-            );
-            const answer = await peerConnection.current.createAnswer();
-            await peerConnection.current.setLocalDescription(answer);
-            ws.current.send(JSON.stringify({ type: "answer", answer }));
-            break;
-
-          case "answer":
-            await peerConnection.current.setRemoteDescription(
-              new RTCSessionDescription(data.answer)
-            );
-            break;
-
-          case "candidate":
-            if (data.candidate) {
-              try {
-                await peerConnection.current.addIceCandidate(
-                  new RTCIceCandidate(data.candidate)
-                );
-              } catch (err) {
-                console.error("Error adding ICE candidate", err);
-              }
-            }
-            break;
-
-          default:
-            break;
+      peer.current.on("stream", (stream: any) => {
+        // Got remote stream
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = stream;
         }
-      };
+      });
+
+      peer.current.on("error", (err: any) => {
+        console.error("Peer error:", err);
+      });
     };
 
     init();
 
     return () => {
-      peerConnection.current?.close();
+      peer.current?.destroy();
       ws.current?.close();
     };
   }, []);
@@ -111,7 +105,10 @@ export const MainBody = () => {
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
       <Grid container spacing={0} sx={{ height: "100%" }}>
-        <Grid xs={12} sm={12} md={6} sx={{ border: "2px solid", borderColor: "primary.main" }}>
+        <Grid
+          size={{ xs: 12, sm: 12, md: 6 }}
+          sx={{ border: "2px solid", borderColor: "primary.main" }}
+        >
           <Box
             sx={{
               height: "100%",
@@ -134,8 +131,18 @@ export const MainBody = () => {
                 borderRadius: "10px",
               }}
             />
-            <Box position="absolute" bottom={80} left={12} bgcolor="rgba(0,0,0,0.7)" px={2} py={0.5} borderRadius={2}>
-              <Typography color="#fff" fontWeight="bold">You</Typography>
+            <Box
+              position="absolute"
+              bottom={80}
+              left={12}
+              bgcolor="rgba(0,0,0,0.7)"
+              px={2}
+              py={0.5}
+              borderRadius={2}
+            >
+              <Typography color="#fff" fontWeight="bold">
+                You
+              </Typography>
             </Box>
             <Box
               position="absolute"
@@ -159,7 +166,10 @@ export const MainBody = () => {
           </Box>
         </Grid>
 
-        <Grid xs={12} sm={12} md={6} sx={{ border: "2px solid", borderColor: "primary.main" }}>
+        <Grid
+          size={{ xs: 12, sm: 12, md: 6 }}
+          sx={{ border: "2px solid", borderColor: "primary.main" }}
+        >
           <Box
             sx={{
               height: "100%",
@@ -181,8 +191,18 @@ export const MainBody = () => {
                 borderRadius: "10px",
               }}
             />
-            <Box position="absolute" bottom={80} left={12} bgcolor="rgba(0,0,0,0.7)" px={2} py={0.5} borderRadius={2}>
-              <Typography color="#fff" fontWeight="bold">Friend</Typography>
+            <Box
+              position="absolute"
+              bottom={80}
+              left={12}
+              bgcolor="rgba(0,0,0,0.7)"
+              px={2}
+              py={0.5}
+              borderRadius={2}
+            >
+              <Typography color="#fff" fontWeight="bold">
+                Friend
+              </Typography>
             </Box>
           </Box>
         </Grid>
