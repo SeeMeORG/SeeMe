@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Mic } from "@mui/icons-material";
 import { Box, Grid, IconButton, Typography } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import Peer from "simple-peer";
 
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
@@ -11,28 +9,7 @@ export const MainBody: React.FC = () => {
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
   const [ws, setWs] = useState<WebSocket | null>(null);
-  const [peer, setPeer] = useState<Peer.Instance | null>(null);
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-
-  const setupPeerEvents = (currentPeer: Peer.Instance, socket: WebSocket) => {
-    console.log("currentPeer => ", currentPeer, socket);
-
-    currentPeer.on("signal", (signalData: any) => {
-      console.log("Sending signal:", signalData);
-      socket.send(JSON.stringify({ type: "signal", signal: signalData }));
-    });
-
-    currentPeer.on("stream", (remoteStream: MediaStream) => {
-      console.log("Received remote stream", remoteStream);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
-      }
-    });
-
-    currentPeer.on("error", (err: any) => {
-      console.error("Peer error:", err);
-    });
-  };
+  const [pc, setPc] = useState<RTCPeerConnection | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -41,8 +18,6 @@ export const MainBody: React.FC = () => {
           video: { facingMode: "user" },
           audio: true,
         });
-
-        setLocalStream(stream);
 
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
@@ -56,43 +31,47 @@ export const MainBody: React.FC = () => {
           socket.send(JSON.stringify({ type: "ready" }));
         };
 
-        socket.onmessage = async (message) => {
-          const data = JSON.parse(message.data);
-          console.log("Received:", data, peer);
-
-          if (!localStream) return;
+        socket.onmessage = async (event) => {
+          const data = JSON.parse(event.data);
+          console.log("Signal received:", data);
 
           switch (data.type) {
             case "ready": {
-              if (peer) return; // already connected
+              if (pc) return;
 
               const isInitiator = !!data.target;
-              const newPeer = new Peer({
-                initiator: isInitiator,
-                trickle: false,
-                stream: localStream,
-              });
+              const newPc = createPeer(socket, stream);
+              setPc(newPc);
 
-              console.log("check point 1 => ", newPeer);
-              setupPeerEvents(newPeer, socket);
-              console.log("check point 2 => ");
-              setPeer(newPeer);
+              if (isInitiator) {
+                const offer = await newPc.createOffer();
+                await newPc.setLocalDescription(offer);
+                socket.send(JSON.stringify({ type: "signal", signal: offer }));
+              }
               break;
             }
 
             case "signal": {
-              if (!peer) {
-                const newPeer = new Peer({
-                  initiator: false,
-                  trickle: false,
-                  stream: localStream,
-                });
+              if (!pc) {
+                const newPc = createPeer(socket, stream);
+                setPc(newPc);
+                await newPc.setRemoteDescription(
+                  new RTCSessionDescription(data.signal)
+                );
 
-                setPeer(newPeer);
-                setupPeerEvents(newPeer, socket);
-                newPeer.signal(data.signal);
+                const answer = await newPc.createAnswer();
+                await newPc.setLocalDescription(answer);
+                socket.send(JSON.stringify({ type: "signal", signal: answer }));
               } else {
-                peer.signal(data.signal);
+                if (!pc.currentRemoteDescription) {
+                  await pc.setRemoteDescription(
+                    new RTCSessionDescription(data.signal)
+                  );
+                } else if (data.signal.candidate) {
+                  await pc.addIceCandidate(
+                    new RTCIceCandidate(data.signal.candidate)
+                  );
+                }
               }
               break;
             }
@@ -102,22 +81,58 @@ export const MainBody: React.FC = () => {
           }
         };
       } catch (error) {
-        console.error("Error accessing media devices:", error);
+        console.error("Media error:", error);
       }
     };
 
     init();
 
     return () => {
-      if (peer && typeof peer.destroy === "function") {
-        peer.destroy();
-      }
-      if (ws && typeof ws.close === "function") {
-        ws.close();
-      }
+      pc?.close();
+      ws?.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const createPeer = (
+    socket: WebSocket,
+    stream: MediaStream
+  ) => {
+    const configuration: RTCConfiguration = {
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+    };
+
+    const peerConnection = new RTCPeerConnection(configuration);
+
+    stream.getTracks().forEach((track) => {
+      peerConnection.addTrack(track, stream);
+    });
+
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.send(
+          JSON.stringify({
+            type: "signal",
+            signal: { candidate: event.candidate },
+          })
+        );
+      }
+    };
+
+    peerConnection.ontrack = (event) => {
+      const [remoteStream] = event.streams;
+      console.log("Remote stream received", remoteStream);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      console.log("Connection state:", peerConnection.connectionState);
+    };
+
+    return peerConnection;
+  };
 
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
