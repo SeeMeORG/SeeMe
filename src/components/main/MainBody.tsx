@@ -1,67 +1,101 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Mic } from "@mui/icons-material";
 import { Box, Grid, IconButton, Typography } from "@mui/material";
-import React, { useEffect, useRef } from "react";
-import SimplePeer from "simple-peer";
+import React, { useEffect, useRef, useState } from "react";
+import Peer from "simple-peer";
 
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody: React.FC = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const ws = useRef<WebSocket | null>(null);
-  const peer = useRef<SimplePeer.Instance | null>(null);
-  const localStream = useRef<MediaStream | null>(null);
+
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [peer, setPeer] = useState<Peer.Instance | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+
+  const setupPeerEvents = (currentPeer: Peer.Instance, socket: WebSocket) => {
+    console.log("currentPeer => ", currentPeer, socket);
+
+    currentPeer.on("signal", (signalData: any) => {
+      console.log("Sending signal:", signalData);
+      socket.send(JSON.stringify({ type: "signal", signal: signalData }));
+    });
+
+    currentPeer.on("stream", (remoteStream: MediaStream) => {
+      console.log("Received remote stream", remoteStream);
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+    });
+
+    currentPeer.on("error", (err: any) => {
+      console.error("Peer error:", err);
+    });
+  };
 
   useEffect(() => {
     const init = async () => {
       try {
-        // Get user media
-        localStream.current = await navigator.mediaDevices.getUserMedia({
+        const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: true,
         });
 
+        setLocalStream(stream);
+
         if (localVideoRef.current) {
-          localVideoRef.current.srcObject = localStream.current;
+          localVideoRef.current.srcObject = stream;
         }
 
-        // Connect to signaling server
-        ws.current = new WebSocket(SIGNAL_SERVER_URL);
+        const socket = new WebSocket(SIGNAL_SERVER_URL);
+        setWs(socket);
 
-        ws.current.onopen = () => {
+        socket.onopen = () => {
           console.log("Connected to signaling server");
-          ws.current?.send(JSON.stringify({ type: "ready" }));
+          socket.send(JSON.stringify({ type: "ready" }));
         };
 
-        ws.current.onmessage = async (message) => {
+        socket.onmessage = async (message) => {
           const data = JSON.parse(message.data);
+          console.log("Received:", data, peer);
+
+          if (!localStream) return;
 
           switch (data.type) {
-            case "ready":
-              if (!peer.current) {
-                // This peer initiates
-                peer.current = new SimplePeer({
-                  initiator: true,
-                  trickle: false,
-                  stream: localStream.current!,
-                });
-                setupPeerEvents();
-              }
-              break;
+            case "ready": {
+              if (peer) return; // already connected
 
-            case "signal":
-              if (!peer.current) {
-                // This peer responds
-                peer.current = new SimplePeer({
+              const isInitiator = !!data.target;
+              const newPeer = new Peer({
+                initiator: isInitiator,
+                trickle: false,
+                stream: localStream,
+              });
+
+              console.log("check point 1 => ", newPeer);
+              setupPeerEvents(newPeer, socket);
+              console.log("check point 2 => ");
+              setPeer(newPeer);
+              break;
+            }
+
+            case "signal": {
+              if (!peer) {
+                const newPeer = new Peer({
                   initiator: false,
                   trickle: false,
-                  stream: localStream.current!,
+                  stream: localStream,
                 });
-                setupPeerEvents();
+
+                setPeer(newPeer);
+                setupPeerEvents(newPeer, socket);
+                newPeer.signal(data.signal);
+              } else {
+                peer.signal(data.signal);
               }
-              peer.current.signal(data.signal);
               break;
+            }
 
             default:
               break;
@@ -72,34 +106,17 @@ export const MainBody: React.FC = () => {
       }
     };
 
-    const setupPeerEvents = () => {
-      if (!peer.current) return;
-
-      peer.current.on("signal", (signalData: any) => {
-        // Send SDP or ICE candidates
-        ws.current?.send(
-          JSON.stringify({ type: "signal", signal: signalData })
-        );
-      });
-
-      peer.current.on("stream", (stream: any) => {
-        // Got remote stream
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = stream;
-        }
-      });
-
-      peer.current.on("error", (err: any) => {
-        console.error("Peer error:", err);
-      });
-    };
-
     init();
 
     return () => {
-      peer.current?.destroy();
-      ws.current?.close();
+      if (peer && typeof peer.destroy === "function") {
+        peer.destroy();
+      }
+      if (ws && typeof ws.close === "function") {
+        ws.close();
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
