@@ -18,7 +18,7 @@ export const MainBody: React.FC = () => {
       try {
         // Get user media
         localStream.current = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: { facingMode: "user" },
           audio: true,
         });
 
