@@ -1,15 +1,20 @@
+import { defineConfig, UserConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
 import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
-import react from "@vitejs/plugin-react";
-import { defineConfig, UserConfig } from "vite";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const config: UserConfig = defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    nodePolyfills({
+      protocolImports: true,
+    }),
+  ],
   resolve: {
     alias: {
-      // Required for polyfilling core Node.js modules
-      stream: "rollup-plugin-node-polyfills/polyfills/stream",
-      buffer: "rollup-plugin-node-polyfills/polyfills/buffer-es6",
+      stream: "stream-browserify",
+      buffer: "buffer",
     },
   },
   optimizeDeps: {
@@ -25,7 +30,7 @@ const config: UserConfig = defineConfig({
         NodeModulesPolyfillPlugin(),
       ],
     },
-  }
+  },
 });
 
 export default config;
