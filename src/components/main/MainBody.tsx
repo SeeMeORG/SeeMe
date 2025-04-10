@@ -1,20 +1,45 @@
 import { Mic } from "@mui/icons-material";
 import { Box, Grid, IconButton, Typography } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import Peer from "simple-peer";
 
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
-export const MainBody: React.FC = () => {
+export const MainBody = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  const [ws, setWs] = useState<WebSocket | null>(null);
-  const [pc, setPc] = useState<RTCPeerConnection | null>(null);
+  const peerRef = useRef<Peer.Instance | null>(null); // ✅ Add ref for stable peer access
+
+  const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
+    p.on("signal", (signalData) => {
+      console.log("Sending signal:", signalData);
+      ws?.send(JSON.stringify({ type: "signal", signal: signalData }));
+    });
+
+    p.on("stream", (remoteStream) => {
+      console.log("Got remote stream");
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+    });
+
+    p.on("error", (err) => {
+      console.error("Peer error:", err);
+    });
+
+    p.on("close", () => {
+      console.log("Peer connection closed");
+    });
+  };
 
   useEffect(() => {
+    let stream: MediaStream;
+    let socket: WebSocket;
+
     const init = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "user" },
           audio: true,
         });
@@ -23,61 +48,51 @@ export const MainBody: React.FC = () => {
           localVideoRef.current.srcObject = stream;
         }
 
-        const socket = new WebSocket(SIGNAL_SERVER_URL);
-        setWs(socket);
+        socket = new WebSocket(SIGNAL_SERVER_URL);
 
         socket.onopen = () => {
-          console.log("Connected to signaling server");
+          console.log("WebSocket connected");
           socket.send(JSON.stringify({ type: "ready" }));
         };
 
-        socket.onmessage = async (event) => {
+        socket.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          console.log("Signal received:", data);
+          console.log("WS message:", data);
 
-          switch (data.type) {
-            case "ready": {
-              if (pc) return;
+          if (data.type === "start") {
+            if (peerRef.current) return; // ✅ Avoid duplicate creation
 
-              const isInitiator = !!data.target;
-              const newPc = createPeer(socket, stream);
-              setPc(newPc);
+            const newPeer = new Peer({
+              initiator: data.initiator,
+              trickle: false,
+              stream,
+            });
 
-              if (isInitiator) {
-                const offer = await newPc.createOffer();
-                await newPc.setLocalDescription(offer);
-                socket.send(JSON.stringify({ type: "signal", signal: offer }));
+            setupPeerEvents(newPeer, socket);
+            peerRef.current = newPeer;
+          }
+
+          if (data.type === "signal") {
+            console.log("Received signal:", data.signal);
+
+            if (!peerRef.current) {
+              const newPeer = new Peer({
+                initiator: false,
+                trickle: false,
+                stream,
+              });
+
+              setupPeerEvents(newPeer, socket);
+              peerRef.current = newPeer;
+
+              newPeer.signal(data.signal);
+            } else {
+              try {
+                peerRef.current.signal(data.signal);
+              } catch (err) {
+                console.error("Signal application error:", err);
               }
-              break;
             }
-
-            case "signal": {
-              if (!pc) {
-                const newPc = createPeer(socket, stream);
-                setPc(newPc);
-                await newPc.setRemoteDescription(
-                  new RTCSessionDescription(data.signal)
-                );
-
-                const answer = await newPc.createAnswer();
-                await newPc.setLocalDescription(answer);
-                socket.send(JSON.stringify({ type: "signal", signal: answer }));
-              } else {
-                if (!pc.currentRemoteDescription) {
-                  await pc.setRemoteDescription(
-                    new RTCSessionDescription(data.signal)
-                  );
-                } else if (data.signal.candidate) {
-                  await pc.addIceCandidate(
-                    new RTCIceCandidate(data.signal.candidate)
-                  );
-                }
-              }
-              break;
-            }
-
-            default:
-              break;
           }
         };
       } catch (error) {
@@ -88,51 +103,10 @@ export const MainBody: React.FC = () => {
     init();
 
     return () => {
-      pc?.close();
-      ws?.close();
+      peerRef.current?.destroy();
+      socket?.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const createPeer = (
-    socket: WebSocket,
-    stream: MediaStream
-  ) => {
-    const configuration: RTCConfiguration = {
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
-    };
-
-    const peerConnection = new RTCPeerConnection(configuration);
-
-    stream.getTracks().forEach((track) => {
-      peerConnection.addTrack(track, stream);
-    });
-
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        socket.send(
-          JSON.stringify({
-            type: "signal",
-            signal: { candidate: event.candidate },
-          })
-        );
-      }
-    };
-
-    peerConnection.ontrack = (event) => {
-      const [remoteStream] = event.streams;
-      console.log("Remote stream received", remoteStream);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
-      }
-    };
-
-    peerConnection.onconnectionstatechange = () => {
-      console.log("Connection state:", peerConnection.connectionState);
-    };
-
-    return peerConnection;
-  };
 
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
