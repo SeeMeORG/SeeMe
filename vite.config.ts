@@ -1,10 +1,9 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
 import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
-import rollupNodePolyFill from "rollup-plugin-node-polyfills";
+import react from "@vitejs/plugin-react";
+import { defineConfig, UserConfig } from "vite";
 
-export default defineConfig({
+const config: UserConfig = defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
@@ -26,10 +25,7 @@ export default defineConfig({
         NodeModulesPolyfillPlugin(),
       ],
     },
-  },
-  build: {
-    rollupOptions: {
-      plugins: [rollupNodePolyFill()],
-    },
-  },
+  }
 });
+
+export default config;
