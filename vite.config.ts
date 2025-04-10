@@ -1,14 +1,15 @@
-import { defineConfig, UserConfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import { NodeGlobalsPolyfillPlugin } from "@esbuild-plugins/node-globals-polyfill";
-import { NodeModulesPolyfillPlugin } from "@esbuild-plugins/node-modules-polyfill";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
-const config: UserConfig = defineConfig({
+export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
       protocolImports: true,
+      globals: {
+        process: true
+      },
     }),
   ],
   resolve: {
@@ -17,20 +18,10 @@ const config: UserConfig = defineConfig({
       buffer: "buffer",
     },
   },
+  define: {
+    global: "globalThis",
+  },
   optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        global: "globalThis",
-      },
-      plugins: [
-        NodeGlobalsPolyfillPlugin({
-          buffer: true,
-          process: true,
-        }),
-        NodeModulesPolyfillPlugin(),
-      ],
-    },
+    exclude: ["process", "buffer"], // Exclude to avoid conflicts
   },
 });
-
-export default config;
