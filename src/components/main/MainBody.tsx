@@ -81,7 +81,7 @@ export const MainBody: React.FC = () => {
           }
         };
       } catch (error) {
-        alert("Media error:", error);
+        alert("Media error =>" + error);
       }
     };
 
