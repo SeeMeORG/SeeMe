@@ -1,14 +1,17 @@
-import { Mic } from "@mui/icons-material";
-import { Box, Grid, IconButton, Typography } from "@mui/material";
-import { useEffect, useRef } from "react";
+import { Box, Grid, Typography } from "@mui/material";
+import { useEffect, useRef,useState } from "react";
 import Peer from "simple-peer";
-
+import FavoriteIcon from "@mui/icons-material/Favorite";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
-
+interface Heart {
+  id: number;
+  x: number;
+}
 export const MainBody = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  const [hearts, setHearts] = useState<Heart[]>([]);
   const peerRef = useRef<Peer.Instance | null>(null); // ✅ Add ref for stable peer access
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
@@ -107,112 +110,140 @@ export const MainBody = () => {
       socket?.close();
     };
   }, []);
-
+  const spawnHeart = () => {
+    const heart = {
+      id: Date.now(),
+      x: Math.random() * 80 + 10,
+    };
+    setHearts((prev) => [...prev, heart]);
+    setTimeout(() => {
+      setHearts((prev) => prev.filter((h) => h.id !== heart.id));
+    }, 2000);
+  };
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
-      <Grid container spacing={0} sx={{ height: "100%" }}>
-        <Grid
-          size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main" }}
+    <Grid container spacing={0} sx={{ height: "100%" }}>
+      {/* Local Video */}
+      <Grid size={{xs:12, sm:12, md:6}} sx={{border: "2px solid", borderColor: "primary.main"}}>
+        <Box
+          sx={{
+            height: "100%",
+            position: "relative",
+            backgroundColor: "#000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
+          <video
+            ref={localVideoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{
+              width: "95%",
+              height: "90%",
+              objectFit: "cover",
+              borderRadius: "10px",
+            }}
+          />
           <Box
+            position="absolute"
+            bottom={80}
+            left={12}
+            bgcolor="rgba(0,0,0,0.5)"
+            px={2}
+            py={0.5}
+            borderRadius={2}
             sx={{
-              height: "100%",
-              position: "relative",
-              backgroundColor: "#000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              backdropFilter: "blur(6px)",
             }}
           >
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{
-                width: "95%",
-                height: "90%",
-                objectFit: "cover",
-                borderRadius: "10px",
-              }}
-            />
-            <Box
-              position="absolute"
-              bottom={80}
-              left={12}
-              bgcolor="rgba(0,0,0,0.7)"
-              px={2}
-              py={0.5}
-              borderRadius={2}
-            >
-              <Typography color="#fff" fontWeight="bold">
-                You
-              </Typography>
-            </Box>
-            <Box
-              position="absolute"
-              bottom={12}
-              left="50%"
-              sx={{
-                transform: "translateX(-50%)",
-                backdropFilter: "blur(10px)",
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-                borderRadius: "30px",
-                px: 2,
-                py: 1,
-                display: "flex",
-                gap: 2,
-              }}
-            >
-              <IconButton sx={{ color: "#fff" }}>
-                <Mic fontSize="large" />
-              </IconButton>
-            </Box>
+            <Typography color="#fff" fontWeight="bold">
+              You
+            </Typography>
           </Box>
-        </Grid>
-
-        <Grid
-          size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main" }}
-        >
-          <Box
-            sx={{
-              height: "100%",
-              position: "relative",
-              backgroundColor: "#222",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              style={{
-                width: "95%",
-                height: "90%",
-                objectFit: "cover",
-                borderRadius: "10px",
-              }}
-            />
-            <Box
-              position="absolute"
-              bottom={80}
-              left={12}
-              bgcolor="rgba(0,0,0,0.7)"
-              px={2}
-              py={0.5}
-              borderRadius={2}
-            >
-              <Typography color="#fff" fontWeight="bold">
-                Friend
-              </Typography>
-            </Box>
-          </Box>
-        </Grid>
+        </Box>
       </Grid>
-    </Box>
+
+      {/* Remote Video */}
+      <Grid size={{xs:12, sm:12, md:6}} sx={{border: "2px solid", borderColor: "primary.main"}}>
+        <Box
+          onClick={spawnHeart}
+          sx={{
+            height: "100%",
+            position: "relative",
+            backgroundColor: "#111",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+            cursor: "pointer",
+          }}
+        >
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            style={{
+              width: "95%",
+              height: "90%",
+              objectFit: "cover",
+              borderRadius: "10px",
+            }}
+          />
+          <Box
+            position="absolute"
+            bottom={80}
+            left={12}
+            bgcolor="rgba(0,0,0,0.5)"
+            px={2}
+            py={0.5}
+            borderRadius={2}
+            sx={{
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <Typography color="#fff" fontWeight="bold">
+              Friend
+            </Typography>
+          </Box>
+
+          {/* Floating hearts animation */}
+          {hearts.map((heart) => (
+            <FavoriteIcon
+              key={heart.id}
+              sx={{
+                position: "absolute",
+                bottom: "10%",
+                left: `${heart.x}%`,
+                color: "hotpink",
+                fontSize: 40,
+                animation: "floatUp 2s ease-out forwards",
+              }}
+            />
+          ))}
+        </Box>
+      </Grid>
+    </Grid>
+
+    {/* Heart Animation Keyframes */}
+    <style>{`
+      @keyframes floatUp {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translateY(-100px) scale(1.3);
+          opacity: 0.8;
+        }
+        100% {
+          transform: translateY(-200px) scale(1);
+          opacity: 0;
+        }
+      }
+    `}</style>
+  </Box>
   );
 };
