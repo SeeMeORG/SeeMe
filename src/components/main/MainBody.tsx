@@ -1,5 +1,5 @@
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { Box, Grid, Typography,TextField,Button } from "@mui/material";
+import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
 
@@ -27,7 +27,8 @@ export const MainBody = () => {
     });
 
     p.on("stream", (remoteStream) => {
-      console.log("Got remote stream");
+      console.log("Got remote stream => ", remoteVideoRef);
+      alert("found remote stream");
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
       }
@@ -71,9 +72,11 @@ export const MainBody = () => {
 
           if (data.type === "start") {
             if (peerRef.current) {
-              console.warn("Peer already exists, ignoring start");
+              console.warn("Peer already exists, ignoring new start signal.");
               return;
             }
+
+            console.log("Creating new peer. Initiator:", data.initiator);
 
             const newPeer = new Peer({
               initiator: data.initiator,
@@ -86,50 +89,26 @@ export const MainBody = () => {
           }
 
           if (data.type === "signal") {
-            console.log("Received signal:", data.signal);
-
-            // Wait until peerRef is ready
             if (!peerRef.current || peerRef.current.destroyed) {
-              console.warn("Peer not ready. Creating one...");
+              console.warn("No active peer for signal, ignoring.");
+              return;
+            }
 
-              // We trust this signal is from someone who initiated.
-              const newPeer = new Peer({
-                initiator: false,
-                trickle: false,
-                stream,
-              });
-
-              setupPeerEvents(newPeer, socket);
-              peerRef.current = newPeer;
-
-              // Wait for the next tick to ensure peer is fully initialized
-              setTimeout(() => {
-                try {
-                  newPeer.signal(data.signal);
-                } catch (err) {
-                  console.error("Error signaling new peer:", err);
-                }
-              }, 0);
-            } else {
-              try {
-                peerRef.current.signal(data.signal);
-              } catch (err) {
-                console.error("Error applying signal:", err);
-              }
+            try {
+              peerRef.current.signal(data.signal);
+            } catch (err) {
+              console.error("Failed to apply signal:", err);
             }
           }
 
           if (data.type === "partner_disconnected") {
-            console.log("Partner disconnected.");
-
+            console.log("Partner disconnected. Destroying peer.");
             if (peerRef.current) {
               peerRef.current.destroy();
               peerRef.current = null;
             }
 
-            setTimeout(() => {
-              socket.send(JSON.stringify({ type: "ready" }));
-            }, 100); // Delay to avoid signal race conditions
+            socket.send(JSON.stringify({ type: "ready" }));
           }
 
           if (data.type === "updateUsers") {
@@ -163,7 +142,7 @@ export const MainBody = () => {
 
   console.log("total users => ", totalUsers);
   console.log("available users => ", availUsers);
-  console.log(name ,"Joined Video Chat")
+  console.log(name, "Joined Video Chat");
 
   const handleJoin = () => {
     if (name.trim()) {
@@ -201,7 +180,7 @@ export const MainBody = () => {
 
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
-      <Grid container spacing={0} sx={{ height:"100%"}}>
+      <Grid container spacing={0} sx={{ height: "100%" }}>
         {/* Local Video */}
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
