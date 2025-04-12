@@ -1,5 +1,5 @@
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import { Box, Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography,TextField,Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
 
@@ -11,10 +11,11 @@ interface Heart {
 }
 
 export const MainBody = () => {
+  const [name, setName] = useState<string>("");
+  const [hasJoined, setHasJoined] = useState<boolean>(false);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
-
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [availUsers, setAvailUsers] = useState(0);
@@ -42,6 +43,7 @@ export const MainBody = () => {
   };
 
   useEffect(() => {
+    if (!hasJoined) return;
     let stream: MediaStream;
     let socket: WebSocket;
 
@@ -132,7 +134,7 @@ export const MainBody = () => {
       peerRef.current?.destroy();
       socket?.close();
     };
-  }, []);
+  }, [hasJoined]);
 
   const spawnHeart = () => {
     const heart = {
@@ -147,10 +149,45 @@ export const MainBody = () => {
 
   console.log("total users => ", totalUsers);
   console.log("available users => ", availUsers);
+  console.log(name ,"Joined Video Chat")
+
+  const handleJoin = () => {
+    if (name.trim()) {
+      setHasJoined(true);
+    }
+  };
+  if (!hasJoined) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+          bgcolor: "#111",
+          color: "#fff",
+        }}
+      >
+        <Typography variant="h4" gutterBottom>
+          Enter Your Name
+        </Typography>
+        <TextField
+          variant="outlined"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          sx={{ bgcolor: "#fff", borderRadius: 1, mb: 2 }}
+        />
+        <Button variant="contained" color="primary" onClick={handleJoin}>
+          Join Chat
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
-      <Grid container spacing={0} sx={{ height: "100%" }}>
+      <Grid container spacing={0} sx={{ height:"100%"}}>
         {/* Local Video */}
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
