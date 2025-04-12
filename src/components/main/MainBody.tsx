@@ -1,18 +1,23 @@
-import { Box, Grid, Typography } from "@mui/material";
-import { useEffect, useRef,useState } from "react";
-import Peer from "simple-peer";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import { Box, Grid, Typography } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import Peer from "simple-peer";
+
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
+
 interface Heart {
   id: number;
   x: number;
 }
+
 export const MainBody = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
+  const peerRef = useRef<Peer.Instance | null>(null);
 
   const [hearts, setHearts] = useState<Heart[]>([]);
-  const peerRef = useRef<Peer.Instance | null>(null); // ✅ Add ref for stable peer access
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [availUsers, setAvailUsers] = useState(0);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -63,7 +68,10 @@ export const MainBody = () => {
           console.log("WS message:", data);
 
           if (data.type === "start") {
-            if (peerRef.current) return; // ✅ Avoid duplicate creation
+            if (peerRef.current) {
+              console.warn("Peer already exists, ignoring start");
+              return;
+            }
 
             const newPeer = new Peer({
               initiator: data.initiator,
@@ -78,7 +86,9 @@ export const MainBody = () => {
           if (data.type === "signal") {
             console.log("Received signal:", data.signal);
 
-            if (!peerRef.current) {
+            if (!peerRef.current || peerRef.current.destroyed) {
+              console.warn("Peer not ready or destroyed, creating new peer");
+
               const newPeer = new Peer({
                 initiator: false,
                 trickle: false,
@@ -97,6 +107,19 @@ export const MainBody = () => {
               }
             }
           }
+
+          if (data.type === "partner_disconnected") {
+            console.log("Partner disconnected. Destroying current peer.");
+            peerRef.current?.destroy();
+            peerRef.current = null;
+
+            socket.send(JSON.stringify({ type: "ready" }));
+          }
+
+          if (data.type === "updateUsers") {
+            setTotalUsers(data?.total ?? 0);
+            setAvailUsers(data?.available ?? 0);
+          }
         };
       } catch (error) {
         alert("Media error =>" + error);
@@ -110,6 +133,7 @@ export const MainBody = () => {
       socket?.close();
     };
   }, []);
+
   const spawnHeart = () => {
     const heart = {
       id: Date.now(),
@@ -120,115 +144,125 @@ export const MainBody = () => {
       setHearts((prev) => prev.filter((h) => h.id !== heart.id));
     }, 2000);
   };
+
+  console.log("total users => ", totalUsers);
+  console.log("available users => ", availUsers);
+
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
-    <Grid container spacing={0} sx={{ height: "100%" }}>
-      {/* Local Video */}
-      <Grid size={{xs:12, sm:12, md:6}} sx={{border: "2px solid", borderColor: "primary.main"}}>
-        <Box
-          sx={{
-            height: "100%",
-            position: "relative",
-            backgroundColor: "#000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+      <Grid container spacing={0} sx={{ height: "100%" }}>
+        {/* Local Video */}
+        <Grid
+          size={{ xs: 12, sm: 12, md: 6 }}
+          sx={{ border: "2px solid", borderColor: "primary.main" }}
         >
-          <video
-            ref={localVideoRef}
-            autoPlay
-            muted
-            playsInline
-            style={{
-              width: "95%",
-              height: "90%",
-              objectFit: "cover",
-              borderRadius: "10px",
-            }}
-          />
           <Box
-            position="absolute"
-            bottom={80}
-            left={12}
-            bgcolor="rgba(0,0,0,0.5)"
-            px={2}
-            py={0.5}
-            borderRadius={2}
             sx={{
-              backdropFilter: "blur(6px)",
+              height: "100%",
+              position: "relative",
+              backgroundColor: "#000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Typography color="#fff" fontWeight="bold">
-              You
-            </Typography>
-          </Box>
-        </Box>
-      </Grid>
-
-      {/* Remote Video */}
-      <Grid size={{xs:12, sm:12, md:6}} sx={{border: "2px solid", borderColor: "primary.main"}}>
-        <Box
-          onClick={spawnHeart}
-          sx={{
-            height: "100%",
-            position: "relative",
-            backgroundColor: "#111",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            cursor: "pointer",
-          }}
-        >
-          <video
-            ref={remoteVideoRef}
-            autoPlay
-            playsInline
-            style={{
-              width: "95%",
-              height: "90%",
-              objectFit: "cover",
-              borderRadius: "10px",
-            }}
-          />
-          <Box
-            position="absolute"
-            bottom={80}
-            left={12}
-            bgcolor="rgba(0,0,0,0.5)"
-            px={2}
-            py={0.5}
-            borderRadius={2}
-            sx={{
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            <Typography color="#fff" fontWeight="bold">
-              Friend
-            </Typography>
-          </Box>
-
-          {/* Floating hearts animation */}
-          {hearts.map((heart) => (
-            <FavoriteIcon
-              key={heart.id}
-              sx={{
-                position: "absolute",
-                bottom: "10%",
-                left: `${heart.x}%`,
-                color: "hotpink",
-                fontSize: 40,
-                animation: "floatUp 2s ease-out forwards",
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{
+                width: "95%",
+                height: "90%",
+                objectFit: "cover",
+                borderRadius: "10px",
               }}
             />
-          ))}
-        </Box>
-      </Grid>
-    </Grid>
+            <Box
+              position="absolute"
+              bottom={80}
+              left={12}
+              bgcolor="rgba(0,0,0,0.5)"
+              px={2}
+              py={0.5}
+              borderRadius={2}
+              sx={{
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Typography color="#fff" fontWeight="bold">
+                You
+              </Typography>
+            </Box>
+          </Box>
+        </Grid>
 
-    {/* Heart Animation Keyframes */}
-    <style>{`
+        {/* Remote Video */}
+        <Grid
+          size={{ xs: 12, sm: 12, md: 6 }}
+          sx={{ border: "2px solid", borderColor: "primary.main" }}
+        >
+          <Box
+            onClick={spawnHeart}
+            sx={{
+              height: "100%",
+              position: "relative",
+              backgroundColor: "#111",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              cursor: "pointer",
+            }}
+          >
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              style={{
+                width: "95%",
+                height: "90%",
+                objectFit: "cover",
+                borderRadius: "10px",
+              }}
+            />
+            <Box
+              position="absolute"
+              bottom={80}
+              left={12}
+              bgcolor="rgba(0,0,0,0.5)"
+              px={2}
+              py={0.5}
+              borderRadius={2}
+              sx={{
+                backdropFilter: "blur(6px)",
+              }}
+            >
+              <Typography color="#fff" fontWeight="bold">
+                Friend
+              </Typography>
+            </Box>
+
+            {/* Floating hearts animation */}
+            {hearts.map((heart) => (
+              <FavoriteIcon
+                key={heart.id}
+                sx={{
+                  position: "absolute",
+                  bottom: "10%",
+                  left: `${heart.x}%`,
+                  color: "hotpink",
+                  fontSize: 40,
+                  animation: "floatUp 2s ease-out forwards",
+                }}
+              />
+            ))}
+          </Box>
+        </Grid>
+      </Grid>
+
+      {/* Heart Animation Keyframes */}
+      <style>{`
       @keyframes floatUp {
         0% {
           transform: translateY(0) scale(1);
@@ -244,6 +278,6 @@ export const MainBody = () => {
         }
       }
     `}</style>
-  </Box>
+    </Box>
   );
 };
