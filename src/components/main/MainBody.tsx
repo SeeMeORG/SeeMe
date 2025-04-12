@@ -88,9 +88,11 @@ export const MainBody = () => {
           if (data.type === "signal") {
             console.log("Received signal:", data.signal);
 
+            // Wait until peerRef is ready
             if (!peerRef.current || peerRef.current.destroyed) {
-              console.warn("Peer not ready or destroyed, creating new peer");
+              console.warn("Peer not ready. Creating one...");
 
+              // We trust this signal is from someone who initiated.
               const newPeer = new Peer({
                 initiator: false,
                 trickle: false,
@@ -100,22 +102,34 @@ export const MainBody = () => {
               setupPeerEvents(newPeer, socket);
               peerRef.current = newPeer;
 
-              newPeer.signal(data.signal);
+              // Wait for the next tick to ensure peer is fully initialized
+              setTimeout(() => {
+                try {
+                  newPeer.signal(data.signal);
+                } catch (err) {
+                  console.error("Error signaling new peer:", err);
+                }
+              }, 0);
             } else {
               try {
                 peerRef.current.signal(data.signal);
               } catch (err) {
-                console.error("Signal application error:", err);
+                console.error("Error applying signal:", err);
               }
             }
           }
 
           if (data.type === "partner_disconnected") {
-            console.log("Partner disconnected. Destroying current peer.");
-            peerRef.current?.destroy();
-            peerRef.current = null;
+            console.log("Partner disconnected.");
 
-            socket.send(JSON.stringify({ type: "ready" }));
+            if (peerRef.current) {
+              peerRef.current.destroy();
+              peerRef.current = null;
+            }
+
+            setTimeout(() => {
+              socket.send(JSON.stringify({ type: "ready" }));
+            }, 100); // Delay to avoid signal race conditions
           }
 
           if (data.type === "updateUsers") {
