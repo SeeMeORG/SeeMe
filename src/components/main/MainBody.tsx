@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +13,7 @@ interface Heart {
 
 export const MainBody = () => {
   const [name, setName] = useState<string>("");
-  const [hasJoined, setHasJoined] = useState<boolean>(false);
+  const [joinedUser, setJoinedUser] = useState("");
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
@@ -44,7 +45,7 @@ export const MainBody = () => {
   };
 
   useEffect(() => {
-    if (!hasJoined) return;
+    if (!joinedUser) return;
     let stream: MediaStream;
     let socket: WebSocket;
 
@@ -63,7 +64,7 @@ export const MainBody = () => {
 
         socket.onopen = () => {
           console.log("WebSocket connected");
-          socket.send(JSON.stringify({ type: "ready" }));
+          socket.send(JSON.stringify({ type: "ready", name: joinedUser }));
         };
 
         socket.onmessage = (event) => {
@@ -112,8 +113,17 @@ export const MainBody = () => {
           }
 
           if (data.type === "updateUsers") {
-            setTotalUsers(data?.total ?? 0);
-            setAvailUsers(data?.available ?? 0);
+            const users = data?.users ?? [];
+
+            // Exclude self
+            const otherUsers = users.filter(
+              (user: any) => user.id !== joinedUser
+            );
+
+            setTotalUsers(otherUsers.length);
+            setAvailUsers(
+              otherUsers.filter((user: any) => user.available).length
+            );
           }
         };
       } catch (error) {
@@ -127,7 +137,7 @@ export const MainBody = () => {
       peerRef.current?.destroy();
       socket?.close();
     };
-  }, [hasJoined]);
+  }, [joinedUser]);
 
   const spawnHeart = () => {
     const heart = {
@@ -142,14 +152,13 @@ export const MainBody = () => {
 
   console.log("total users => ", totalUsers);
   console.log("available users => ", availUsers);
-  console.log(name, "Joined Video Chat");
 
   const handleJoin = () => {
     if (name.trim()) {
-      setHasJoined(true);
+      setJoinedUser(name);
     }
   };
-  if (!hasJoined) {
+  if (!joinedUser) {
     return (
       <Box
         sx={{
