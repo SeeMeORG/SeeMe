@@ -7,9 +7,7 @@ import {
   Divider,
   Stack,
   Toolbar,
-  Typography,
-  useMediaQuery,
-  useTheme,
+  Typography
 } from "@mui/material";
 import { useSelector } from "react-redux";
 import logo from "../../assets/LOGO.png";
@@ -23,8 +21,6 @@ export const Header = () => {
   const joinedUserName = useSelector(joinedUser);
   const totalUsersList = useSelector(totalUsers);
   const availUsersList = useSelector(availableUsers);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
     <AppBar position="sticky" elevation={6} sx={{ py: 1 }}>
@@ -46,7 +42,6 @@ export const Header = () => {
         {joinedUserName && (
           <Box
             sx={{
-              backgroundColor: "rgba(255,255,255,0.08)",
               px: { xs: 2, sm: 3 },
               py: { xs: 0.5, sm: 1 },
               borderRadius: 2,
@@ -54,38 +49,35 @@ export const Header = () => {
           >
             <Stack
               direction="row"
-              spacing={isMobile ? 1 : 2}
+              spacing={2}
               divider={<Divider orientation="vertical" flexItem />}
               alignItems="center"
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <PersonIcon fontSize={isMobile ? "small" : "medium"} />
+                <PersonIcon fontSize="small"/>
                 <Typography
-                  variant="body2"
+                  variant="subtitle1"
                   fontWeight={500}
-                  fontSize={isMobile ? "0.75rem" : "1rem"}
                 >
                   {joinedUserName || "Not Joined"}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <PublicIcon fontSize={isMobile ? "small" : "medium"} />
+                <PublicIcon fontSize="small" />
                 <Typography
-                  variant="body2"
+                  variant="subtitle1"
                   fontWeight={500}
-                  fontSize={isMobile ? "0.75rem" : "1rem"}
                 >
                   Total: {totalUsersList}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <CheckCircleIcon fontSize={isMobile ? "small" : "medium"} />
+                <CheckCircleIcon fontSize="small" />
                 <Typography
-                  variant="body2"
+                  variant="subtitle1"
                   fontWeight={500}
-                  fontSize={isMobile ? "0.75rem" : "1rem"}
                 >
                   Available: {availUsersList}
                 </Typography>
