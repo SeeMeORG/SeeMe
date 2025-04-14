@@ -1,9 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
-
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "../../features/store";
+import {
+  setName as setUserName,
+  setTotalUsers,
+  setAvailableUsers,
+} from "../../features/counterSlice";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 interface Heart {
@@ -12,14 +17,20 @@ interface Heart {
 }
 
 export const MainBody = () => {
-  const [name, setName] = useState<string>("");
+
   const [joinedUser, setJoinedUser] = useState("");
+
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
   const [hearts, setHearts] = useState<Heart[]>([]);
-  const [totalUsers, setTotalUsers] = useState(0);
-  const [availUsers, setAvailUsers] = useState(0);
+
+  const dispatch = useDispatch();
+  const name = useSelector((state: RootState) => state.user.name);
+  const totalUsers = useSelector((state: RootState) => state.user.totalUsers);
+  const availUsers = useSelector(
+    (state: RootState) => state.user.availableUsers
+  );
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -113,17 +124,19 @@ export const MainBody = () => {
           }
 
           if (data.type === "updateUsers") {
-            const users = data?.users ?? [];
+            const users = data?.clients ?? [];
 
             // Exclude self
             const otherUsers = users.filter(
               (user: any) => user.id !== joinedUser
             );
 
-            setTotalUsers(otherUsers.length);
-            setAvailUsers(
-              otherUsers.filter((user: any) => user.available).length
-            );
+            const avail = otherUsers?.filter(
+              (user: any) => user?.available
+            )?.length;
+
+            dispatch(setTotalUsers(otherUsers?.length ?? 0));
+            dispatch(setAvailableUsers(avail ?? 0));
           }
         };
       } catch (error) {
@@ -177,7 +190,7 @@ export const MainBody = () => {
         <TextField
           variant="outlined"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => dispatch(setUserName(e.target.value))}
           sx={{ bgcolor: "#fff", borderRadius: 1, mb: 2 }}
         />
         <Button variant="contained" color="primary" onClick={handleJoin}>
@@ -190,6 +203,13 @@ export const MainBody = () => {
   return (
     <Box sx={{ height: "92vh", m: 0 }}>
       <Grid container spacing={0} sx={{ height: "100%" }}>
+        {/* <Box sx={{ p: 2, color: "#fff", backgroundColor: "#222" }}>
+          <Typography variant="subtitle1">Name: {name}</Typography>
+          <Typography variant="subtitle1">Total Users: {totalUsers}</Typography>
+          <Typography variant="subtitle1">
+            Available Users: {availUsers}
+          </Typography>
+        </Box> */}
         {/* Local Video */}
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
