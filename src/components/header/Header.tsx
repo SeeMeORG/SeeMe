@@ -1,51 +1,91 @@
-import { AppBar, Box, Toolbar, Typography } from "@mui/material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PersonIcon from "@mui/icons-material/Person";
+import PublicIcon from "@mui/icons-material/Public";
+import {
+  AppBar,
+  Box,
+  Divider,
+  Stack,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
 import { useSelector } from "react-redux";
 import logo from "../../assets/LOGO.png";
-import { RootState } from "../../store/store";
+import { availableUsers, joinedUser, totalUsers } from "../../store/counterSlice";
 
 export const Header = () => {
-  const name = useSelector((state: RootState) => state.user.name);
-  const totalUsers = useSelector((state: RootState) => state.user.totalUsers);
-  const availableUsers = useSelector(
-    (state: RootState) => state.user.availableUsers
-  );
+  const joinedUserName = useSelector(joinedUser);
+  const totalUsersList = useSelector(totalUsers);
+  const availUsersList = useSelector(availableUsers);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <AppBar
-      position="sticky"
-      elevation={6}
-      sx={{
-        background: "",
-        py: 1,
-      }}
-    >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-
+    <AppBar position="sticky" elevation={6} sx={{ py: 1 }}>
+      <Toolbar
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexDirection: "row",
+          flexWrap: "nowrap",
+        }}
+      >
+        {/* Logo on left */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <img src={logo} alt="Logo" height={44} />
+          <img src={logo} alt="Logo" height={47} />
         </Box>
 
-    
+        {/* Info section on right */}
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
             backgroundColor: "rgba(255,255,255,0.08)",
-            px: 3,
-            py: 1,
+            px: isMobile ? 2 : 3,
+            py: isMobile ? 0.5 : 1,
             borderRadius: 2,
           }}
         >
-          <Typography variant="body1" fontWeight={500}>
-            👤 {name || "Not Joined"}
-          </Typography>
-          <Typography variant="body1" fontWeight={500}>
-            🌐 Total: {totalUsers}
-          </Typography>
-          <Typography variant="body1" fontWeight={500}>
-            ✅ Available: {availableUsers}
-          </Typography>
+          <Stack
+            direction="row"
+            spacing={isMobile ? 1 : 2}
+            divider={<Divider orientation="vertical" flexItem />}
+            alignItems="center"
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <PersonIcon fontSize={isMobile ? "small" : "medium"} />
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                fontSize={isMobile ? "0.75rem" : "1rem"}
+              >
+                {joinedUserName || "Not Joined"}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <PublicIcon fontSize={isMobile ? "small" : "medium"} />
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                fontSize={isMobile ? "0.75rem" : "1rem"}
+              >
+                Total: {totalUsersList}
+              </Typography>
+            </Box>
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <CheckCircleIcon fontSize={isMobile ? "small" : "medium"} />
+              <Typography
+                variant="body2"
+                fontWeight={500}
+                fontSize={isMobile ? "0.75rem" : "1rem"}
+              >
+                Available: {availUsersList}
+              </Typography>
+            </Box>
+          </Stack>
         </Box>
       </Toolbar>
     </AppBar>
