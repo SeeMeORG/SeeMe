@@ -1,14 +1,16 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../features/store";
+import { RootState } from "../../store/store";
 import {
   setName as setUserName,
   setTotalUsers,
   setAvailableUsers,
-} from "../../features/counterSlice";
+} from "../../store/counterSlice";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 interface Heart {

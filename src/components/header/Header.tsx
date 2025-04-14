@@ -1,7 +1,7 @@
 import { AppBar, Box, Toolbar, Typography } from "@mui/material";
 import { useSelector } from "react-redux";
 import logo from "../../assets/LOGO.png";
-import { RootState } from "../../features/store";
+import { RootState } from "../../store/store";
 
 export const Header = () => {
   const name = useSelector((state: RootState) => state.user.name);

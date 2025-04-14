@@ -5,7 +5,7 @@ import { RouterProvider } from "react-router-dom";
 import { routes } from "./routes.tsx";
 import { Provider } from "react-redux";
 import { muiTheme } from "./style/muiTheme.ts";
-import { store } from "./features/store.ts";
+import { store } from "./store/store.ts";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
