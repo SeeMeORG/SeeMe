@@ -12,7 +12,7 @@ import {
   totalUsers,
   availableUsers,
   setJoindedUser,
-} from "../../store/counterSlice";
+} from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
