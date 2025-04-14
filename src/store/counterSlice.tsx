@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { RootState } from './store';
 
 interface UserState {
   name: string;
@@ -12,11 +13,11 @@ const initialState: UserState = {
   availableUsers: 0,
 };
 
-const userSlice = createSlice({
+export const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setName: (state, action: PayloadAction<string>) => {
+    setJoindedUser: (state, action: PayloadAction<string>) => {
       state.name = action.payload;
     },
     setTotalUsers: (state, action: PayloadAction<number>) => {
@@ -28,5 +29,8 @@ const userSlice = createSlice({
   },
 });
 
-export const { setName, setTotalUsers, setAvailableUsers } = userSlice.actions;
-export default userSlice.reducer;
+export const { setJoindedUser, setTotalUsers, setAvailableUsers } = userSlice.actions;
+
+export const joinedUser = (state: RootState) => state.user.name;
+export const totalUsers = (state: RootState) => state.user.totalUsers;
+export const availableUsers = (state: RootState) => state.user.availableUsers;

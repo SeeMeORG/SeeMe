@@ -5,12 +5,15 @@ import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import Peer from "simple-peer";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "../../store/store";
 import {
-  setName as setUserName,
   setTotalUsers,
   setAvailableUsers,
+  joinedUser,
+  totalUsers,
+  availableUsers,
+  setJoindedUser,
 } from "../../store/counterSlice";
+import { muiTheme } from "../../style/muiTheme";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 interface Heart {
@@ -19,20 +22,18 @@ interface Heart {
 }
 
 export const MainBody = () => {
-
-  const [joinedUser, setJoinedUser] = useState("");
+  const dispatch = useDispatch();
 
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
-  const [hearts, setHearts] = useState<Heart[]>([]);
 
-  const dispatch = useDispatch();
-  const name = useSelector((state: RootState) => state.user.name);
-  const totalUsers = useSelector((state: RootState) => state.user.totalUsers);
-  const availUsers = useSelector(
-    (state: RootState) => state.user.availableUsers
-  );
+  const joinedUserName = useSelector(joinedUser);
+  const totalUsersList = useSelector(totalUsers);
+  const availUsersList = useSelector(availableUsers);
+
+  const [name, setUserName] = useState("");
+  const [hearts, setHearts] = useState<Heart[]>([]);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -58,7 +59,7 @@ export const MainBody = () => {
   };
 
   useEffect(() => {
-    if (!joinedUser) return;
+    if (!joinedUserName) return;
     let stream: MediaStream;
     let socket: WebSocket;
 
@@ -77,7 +78,7 @@ export const MainBody = () => {
 
         socket.onopen = () => {
           console.log("WebSocket connected");
-          socket.send(JSON.stringify({ type: "ready", name: joinedUser }));
+          socket.send(JSON.stringify({ type: "ready", name: joinedUserName }));
         };
 
         socket.onmessage = (event) => {
@@ -130,7 +131,7 @@ export const MainBody = () => {
 
             // Exclude self
             const otherUsers = users.filter(
-              (user: any) => user.id !== joinedUser
+              (user: any) => user.id !== joinedUserName
             );
 
             const avail = otherUsers?.filter(
@@ -152,7 +153,7 @@ export const MainBody = () => {
       peerRef.current?.destroy();
       socket?.close();
     };
-  }, [joinedUser]);
+  }, [joinedUserName]);
 
   const spawnHeart = () => {
     const heart = {
@@ -165,54 +166,44 @@ export const MainBody = () => {
     }, 2000);
   };
 
-  console.log("total users => ", totalUsers);
-  console.log("available users => ", availUsers);
+  console.log("total users => ", totalUsersList);
+  console.log("available users => ", availUsersList);
 
   const handleJoin = () => {
     if (name.trim()) {
-      setJoinedUser(name);
+      dispatch(setJoindedUser(name));
     }
   };
-  if (!joinedUser) {
-    return (
-      <Box
-        sx={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          flexDirection: "column",
-          bgcolor: "#111",
-          color: "#fff",
-        }}
-      >
-        <Typography variant="h4" gutterBottom>
-          Enter Your Name
-        </Typography>
-        <TextField
-          variant="outlined"
-          value={name}
-          onChange={(e) => dispatch(setUserName(e.target.value))}
-          sx={{ bgcolor: "#fff", borderRadius: 1, mb: 2 }}
-        />
-        <Button variant="contained" color="primary" onClick={handleJoin}>
-          Join Chat
-        </Button>
-      </Box>
-    );
-  }
 
-  return (
+  return !joinedUserName ? (
+    <Box
+      sx={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+        bgcolor: "#111",
+        color: "#fff",
+      }}
+    >
+      <Typography variant="h4" gutterBottom>
+        Enter Your Name
+      </Typography>
+      <TextField
+        variant="outlined"
+        placeholder="Enter Your Name"
+        value={name}
+        onChange={(e) => setUserName(e.target.value)}
+        sx={{ bgcolor: muiTheme.palette.text.secondary, borderRadius: 1, mb: 2 }}
+      />
+      <Button variant="contained" color="primary" onClick={handleJoin}>
+        Join Chat
+      </Button>
+    </Box>
+  ) : (
     <Box sx={{ height: "92vh", m: 0 }}>
       <Grid container spacing={0} sx={{ height: "100%" }}>
-        {/* <Box sx={{ p: 2, color: "#fff", backgroundColor: "#222" }}>
-          <Typography variant="subtitle1">Name: {name}</Typography>
-          <Typography variant="subtitle1">Total Users: {totalUsers}</Typography>
-          <Typography variant="subtitle1">
-            Available Users: {availUsers}
-          </Typography>
-        </Box> */}
-        {/* Local Video */}
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
           sx={{ border: "2px solid", borderColor: "primary.main" }}
