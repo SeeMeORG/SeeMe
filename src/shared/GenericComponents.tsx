@@ -1,4 +1,4 @@
-import { Avatar, Box, CircularProgress } from "@mui/material";
+import { Avatar, Box, CircularProgress, Typography } from "@mui/material";
 import { IGenericAvatarProps } from "./interface";
 
 export const GenericAvatar = ({
@@ -33,7 +33,7 @@ export const GenericAvatar = ({
   );
 };
 
-export const GenericLoader = () => {
+export const GenericLoader = ({ text }: { text?: string }) => {
   return (
     <Box
       height="100%"
@@ -42,7 +42,10 @@ export const GenericLoader = () => {
       justifyContent="center"
       alignItems="center"
     >
-      <CircularProgress />
+      <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" gap={2}>
+        <CircularProgress />
+        {text && <Typography variant="h5">{text}</Typography>}
+      </Box>
     </Box>
   );
 };

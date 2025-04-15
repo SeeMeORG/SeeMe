@@ -12,6 +12,7 @@ import {
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
 import { GenericLoader } from "../../shared/GenericComponents";
+import { Form } from "react-router-dom";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
@@ -166,25 +167,40 @@ export const MainBody = () => {
           <Typography variant="h4" gutterBottom>
             Enter Your Name
           </Typography>
-          <TextField
-            variant="outlined"
-            placeholder="Enter Your Name"
-            value={name}
-            onChange={(e) => setUserName(e.target.value)}
-            sx={{
-              bgcolor: muiTheme.palette.text.secondary,
-              borderRadius: 1,
-              mb: 2,
+          <Form
+            onSubmit={handleJoin}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexDirection: "column",
             }}
-          />
-          <Button variant="contained" color="primary" onClick={handleJoin}>
-            Join Chat
-          </Button>
+          >
+            <TextField
+              autoFocus
+              variant="outlined"
+              placeholder="Enter Your Name"
+              value={name}
+              onChange={(e) => setUserName(e.target.value)}
+              sx={{
+                bgcolor: muiTheme.palette.text.secondary,
+                borderRadius: 1,
+                mb: 2,
+              }}
+            />
+            <Button type="submit" variant="contained" color="primary">
+              Join
+            </Button>
+          </Form>
         </Box>
       ) : (
         <Box sx={{ height: "100%", m: 0 }}>
-          {wsLoader && <GenericLoader />}
-          <Grid container spacing={0} sx={{ height: "100%", display: wsLoader ? "none" : "",  }}>
+          {wsLoader && <GenericLoader text="Connecting to the server..." />}
+          <Grid
+            container
+            spacing={0}
+            sx={{ height: "100%", display: wsLoader ? "none" : "" }}
+          >
             <Grid
               size={{ xs: 12, sm: 12, md: 6 }}
               sx={{
