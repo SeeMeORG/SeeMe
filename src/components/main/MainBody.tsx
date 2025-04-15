@@ -32,7 +32,7 @@ export const MainBody = () => {
     });
 
     p.on("stream", (remoteStream) => {
-      alert("found remote stream");
+      alert("मनु जग्गी जिंदाबाद...");
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
       }
