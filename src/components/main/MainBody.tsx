@@ -182,7 +182,7 @@ export const MainBody = () => {
       <Grid container spacing={0} sx={{ height: "100%" }}>
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main" }}
+          sx={{ border: "2px solid", borderColor: "primary.main", height: { xs: "50%", sm: "50%", md: "100%" } }}
         >
           <Box
             sx={{
@@ -227,7 +227,7 @@ export const MainBody = () => {
 
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main" }}
+          sx={{ border: "2px solid", borderColor: "primary.main", height: { xs: "50%", sm: "50%", md: "100%" } }}
         >
           <Box
             sx={{
