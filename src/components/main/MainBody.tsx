@@ -25,7 +25,7 @@ export const MainBody = () => {
 
   const [name, setUserName] = useState("");
   const [remoteLoader, setRemoteLoader] = useState(true);
-  const [wsConnected, setWsConnected] = useState(false);
+  const [wsLoader, setWSLoader] = useState(true);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -65,10 +65,11 @@ export const MainBody = () => {
           localVideoRef.current.srcObject = stream;
         }
 
+        setWSLoader(true);
         socket = new WebSocket(SIGNAL_SERVER_URL);
 
         socket.onopen = () => {
-          setWsConnected(true)
+          setWSLoader(false);
           socket.send(JSON.stringify({ type: "ready", name: joinedUserName }));
         };
 
@@ -147,148 +148,147 @@ export const MainBody = () => {
       dispatch(setJoindedUser(name));
     }
   };
-  if (!wsConnected) {
-    return (
-      <Box
-        sx={{
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          bgcolor: "#000",
-        }}
-      >
-        <GenericLoader />
-      </Box>
-    );
-  }
-  return !joinedUserName ? (
-    <Box
-      sx={{
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        flexDirection: "column",
-        bgcolor: "#111",
-        color: "#fff",
-      }}
-    >
-      <Typography variant="h4" gutterBottom>
-        Enter Your Name
-      </Typography>
-      <TextField
-        variant="outlined"
-        placeholder="Enter Your Name"
-        value={name}
-        onChange={(e) => setUserName(e.target.value)}
-        sx={{
-          bgcolor: muiTheme.palette.text.secondary,
-          borderRadius: 1,
-          mb: 2,
-        }}
-      />
-      <Button variant="contained" color="primary" onClick={handleJoin}>
-        Join Chat
-      </Button>
-    </Box>
-    
-  ) : (
-    <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
-      <Grid container spacing={0} sx={{ height: "100%" }}>
-        <Grid
-          size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main", height: { xs: "50%", sm: "50%", md: "100%" } }}
-        >
-          <Box
-            sx={{
-              height: "100%",
-              position: "relative",
-              backgroundColor: "#000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <video
-              ref={localVideoRef}
-              autoPlay
-              muted
-              playsInline
-              style={{
-                width: "95%",
-                height: "90%",
-                objectFit: "cover",
-                borderRadius: "10px",
-              }}
-            />
-            <Box
-              position="absolute"
-              bottom={80}
-              left={12}
-              bgcolor="rgba(0,0,0,0.5)"
-              px={2}
-              py={0.5}
-              borderRadius={2}
-              sx={{
-                backdropFilter: "blur(6px)",
-              }}
-            >
-              <Typography color="#fff" fontWeight="bold">
-                You
-              </Typography>
-            </Box>
-          </Box>
-        </Grid>
 
-        <Grid
-          size={{ xs: 12, sm: 12, md: 6 }}
-          sx={{ border: "2px solid", borderColor: "primary.main", height: { xs: "50%", sm: "50%", md: "100%" } }}
+  return (
+    <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
+      {!joinedUserName ? (
+        <Box
+          sx={{
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+            bgcolor: "#111",
+            color: "#fff",
+          }}
         >
-          <Box
+          <Typography variant="h4" gutterBottom>
+            Enter Your Name
+          </Typography>
+          <TextField
+            variant="outlined"
+            placeholder="Enter Your Name"
+            value={name}
+            onChange={(e) => setUserName(e.target.value)}
             sx={{
-              height: "100%",
-              position: "relative",
-              backgroundColor: "#111",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              cursor: "pointer",
+              bgcolor: muiTheme.palette.text.secondary,
+              borderRadius: 1,
+              mb: 2,
             }}
-          >
-            {remoteLoader && <GenericLoader />}
-            <video
-              ref={remoteVideoRef}
-              autoPlay
-              playsInline
-              style={{
-                width: "95%",
-                height: "90%",
-                objectFit: "cover",
-                borderRadius: "10px",
-                display: remoteLoader ? "none": "block",
-              }}
-            />
-            <Box
-              position="absolute"
-              bottom={80}
-              left={12}
-              bgcolor="rgba(0,0,0,0.5)"
-              px={2}
-              py={0.5}
-              borderRadius={2}
+          />
+          <Button variant="contained" color="primary" onClick={handleJoin}>
+            Join Chat
+          </Button>
+        </Box>
+      ) : wsLoader ? (
+        <GenericLoader />
+      ) : (
+        <Box sx={{ height: "100%", m: 0 }}>
+          <Grid container spacing={0} sx={{ height: "100%" }}>
+            <Grid
+              size={{ xs: 12, sm: 12, md: 6 }}
               sx={{
-                backdropFilter: "blur(6px)",
+                border: "2px solid",
+                borderColor: "primary.main",
+                height: { xs: "50%", sm: "50%", md: "100%" },
               }}
             >
-              <Typography color="#fff" fontWeight="bold">
-                Friend
-              </Typography>
-            </Box>
-          </Box>
-        </Grid>
-      </Grid>
+              <Box
+                sx={{
+                  height: "100%",
+                  position: "relative",
+                  backgroundColor: "#000",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <video
+                  ref={localVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  style={{
+                    width: "95%",
+                    height: "90%",
+                    objectFit: "cover",
+                    borderRadius: "10px",
+                  }}
+                />
+                <Box
+                  position="absolute"
+                  bottom={80}
+                  left={12}
+                  bgcolor="rgba(0,0,0,0.5)"
+                  px={2}
+                  py={0.5}
+                  borderRadius={2}
+                  sx={{
+                    backdropFilter: "blur(6px)",
+                  }}
+                >
+                  <Typography color="#fff" fontWeight="bold">
+                    You
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+
+            <Grid
+              size={{ xs: 12, sm: 12, md: 6 }}
+              sx={{
+                border: "2px solid",
+                borderColor: "primary.main",
+                height: { xs: "50%", sm: "50%", md: "100%" },
+              }}
+            >
+              <Box
+                sx={{
+                  height: "100%",
+                  position: "relative",
+                  backgroundColor: "#111",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  cursor: "pointer",
+                }}
+              >
+                {remoteLoader && <GenericLoader />}
+                <video
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: "95%",
+                    height: "90%",
+                    objectFit: "cover",
+                    borderRadius: "10px",
+                    display: remoteLoader ? "none" : "block",
+                  }}
+                />
+                <Box
+                  position="absolute"
+                  bottom={80}
+                  left={12}
+                  bgcolor="rgba(0,0,0,0.5)"
+                  px={2}
+                  py={0.5}
+                  borderRadius={2}
+                  sx={{
+                    backdropFilter: "blur(6px)",
+                  }}
+                >
+                  <Typography color="#fff" fontWeight="bold">
+                    Friend
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
     </Box>
   );
 };
