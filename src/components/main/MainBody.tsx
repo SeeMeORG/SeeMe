@@ -25,6 +25,7 @@ export const MainBody = () => {
 
   const [name, setUserName] = useState("");
   const [remoteLoader, setRemoteLoader] = useState(true);
+  const [wsConnected, setWsConnected] = useState(false);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -38,7 +39,6 @@ export const MainBody = () => {
       }
       setRemoteLoader(false);
     });
-
     p.on("error", (err) => {
       console.error("Peer error:", err);
     });
@@ -68,6 +68,7 @@ export const MainBody = () => {
         socket = new WebSocket(SIGNAL_SERVER_URL);
 
         socket.onopen = () => {
+          setWsConnected(true)
           socket.send(JSON.stringify({ type: "ready", name: joinedUserName }));
         };
 
@@ -146,7 +147,21 @@ export const MainBody = () => {
       dispatch(setJoindedUser(name));
     }
   };
-
+  if (!wsConnected) {
+    return (
+      <Box
+        sx={{
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          bgcolor: "#000",
+        }}
+      >
+        <GenericLoader />
+      </Box>
+    );
+  }
   return !joinedUserName ? (
     <Box
       sx={{
@@ -177,6 +192,7 @@ export const MainBody = () => {
         Join Chat
       </Button>
     </Box>
+    
   ) : (
     <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
       <Grid container spacing={0} sx={{ height: "100%" }}>
