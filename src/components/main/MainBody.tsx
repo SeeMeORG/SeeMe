@@ -1,25 +1,18 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import { Box, Grid, Typography, TextField, Button } from "@mui/material";
+import { Box, Button, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import Peer from "simple-peer";
-import { useSelector, useDispatch } from "react-redux";
 import {
-  setTotalUsers,
-  setAvailableUsers,
   joinedUser,
-  totalUsers,
-  availableUsers,
+  setAvailableUsers,
   setJoindedUser,
+  setTotalUsers,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
+import { GenericLoader } from "../../shared/GenericComponents";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
-
-interface Heart {
-  id: number;
-  x: number;
-}
 
 export const MainBody = () => {
   const dispatch = useDispatch();
@@ -29,24 +22,21 @@ export const MainBody = () => {
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const joinedUserName = useSelector(joinedUser);
-  const totalUsersList = useSelector(totalUsers);
-  const availUsersList = useSelector(availableUsers);
 
   const [name, setUserName] = useState("");
-  const [hearts, setHearts] = useState<Heart[]>([]);
+  const [remoteLoader, setRemoteLoader] = useState(true);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
-      console.log("Sending signal:", signalData);
       ws?.send(JSON.stringify({ type: "signal", signal: signalData }));
     });
 
     p.on("stream", (remoteStream) => {
-      console.log("Got remote stream => ", remoteVideoRef);
       alert("found remote stream");
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
       }
+      setRemoteLoader(false);
     });
 
     p.on("error", (err) => {
@@ -54,7 +44,8 @@ export const MainBody = () => {
     });
 
     p.on("close", () => {
-      console.log("Peer connection closed");
+      console.warn("Peer connection closed");
+      setRemoteLoader(true);
     });
   };
 
@@ -77,21 +68,18 @@ export const MainBody = () => {
         socket = new WebSocket(SIGNAL_SERVER_URL);
 
         socket.onopen = () => {
-          console.log("WebSocket connected");
           socket.send(JSON.stringify({ type: "ready", name: joinedUserName }));
         };
 
         socket.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          console.log("WS message:", data);
 
           if (data.type === "start") {
+            setRemoteLoader(true);
             if (peerRef.current) {
               console.warn("Peer already exists, ignoring new start signal.");
               return;
             }
-
-            console.log("Creating new peer. Initiator:", data.initiator);
 
             const newPeer = new Peer({
               initiator: data.initiator,
@@ -117,19 +105,17 @@ export const MainBody = () => {
           }
 
           if (data.type === "partner_disconnected") {
-            console.log("Partner disconnected. Destroying peer.");
             if (peerRef.current) {
               peerRef.current.destroy();
               peerRef.current = null;
             }
-
+            setRemoteLoader(true);
             socket.send(JSON.stringify({ type: "ready" }));
           }
 
           if (data.type === "updateUsers") {
             const users = data?.clients ?? [];
 
-            // Exclude self
             const otherUsers = users.filter(
               (user: any) => user.id !== joinedUserName
             );
@@ -154,20 +140,6 @@ export const MainBody = () => {
       socket?.close();
     };
   }, [joinedUserName]);
-
-  const spawnHeart = () => {
-    const heart = {
-      id: Date.now(),
-      x: Math.random() * 80 + 10,
-    };
-    setHearts((prev) => [...prev, heart]);
-    setTimeout(() => {
-      setHearts((prev) => prev.filter((h) => h.id !== heart.id));
-    }, 2000);
-  };
-
-  console.log("total users => ", totalUsersList);
-  console.log("available users => ", availUsersList);
 
   const handleJoin = () => {
     if (name.trim()) {
@@ -195,14 +167,18 @@ export const MainBody = () => {
         placeholder="Enter Your Name"
         value={name}
         onChange={(e) => setUserName(e.target.value)}
-        sx={{ bgcolor: muiTheme.palette.text.secondary, borderRadius: 1, mb: 2 }}
+        sx={{
+          bgcolor: muiTheme.palette.text.secondary,
+          borderRadius: 1,
+          mb: 2,
+        }}
       />
       <Button variant="contained" color="primary" onClick={handleJoin}>
         Join Chat
       </Button>
     </Box>
   ) : (
-    <Box sx={{ height: "92vh", m: 0 }}>
+    <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
       <Grid container spacing={0} sx={{ height: "100%" }}>
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
@@ -249,13 +225,11 @@ export const MainBody = () => {
           </Box>
         </Grid>
 
-        {/* Remote Video */}
         <Grid
           size={{ xs: 12, sm: 12, md: 6 }}
           sx={{ border: "2px solid", borderColor: "primary.main" }}
         >
           <Box
-            onClick={spawnHeart}
             sx={{
               height: "100%",
               position: "relative",
@@ -267,6 +241,7 @@ export const MainBody = () => {
               cursor: "pointer",
             }}
           >
+            {remoteLoader && <GenericLoader />}
             <video
               ref={remoteVideoRef}
               autoPlay
@@ -276,6 +251,7 @@ export const MainBody = () => {
                 height: "90%",
                 objectFit: "cover",
                 borderRadius: "10px",
+                display: remoteLoader ? "none": "block",
               }}
             />
             <Box
@@ -294,42 +270,9 @@ export const MainBody = () => {
                 Friend
               </Typography>
             </Box>
-
-            {/* Floating hearts animation */}
-            {hearts.map((heart) => (
-              <FavoriteIcon
-                key={heart.id}
-                sx={{
-                  position: "absolute",
-                  bottom: "10%",
-                  left: `${heart.x}%`,
-                  color: "hotpink",
-                  fontSize: 40,
-                  animation: "floatUp 2s ease-out forwards",
-                }}
-              />
-            ))}
           </Box>
         </Grid>
       </Grid>
-
-      {/* Heart Animation Keyframes */}
-      <style>{`
-      @keyframes floatUp {
-        0% {
-          transform: translateY(0) scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: translateY(-100px) scale(1.3);
-          opacity: 0.8;
-        }
-        100% {
-          transform: translateY(-200px) scale(1);
-          opacity: 0;
-        }
-      }
-    `}</style>
     </Box>
   );
 };
