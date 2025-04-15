@@ -181,11 +181,10 @@ export const MainBody = () => {
             Join Chat
           </Button>
         </Box>
-      ) : wsLoader ? (
-        <GenericLoader />
       ) : (
         <Box sx={{ height: "100%", m: 0 }}>
-          <Grid container spacing={0} sx={{ height: "100%" }}>
+          {wsLoader && <GenericLoader />}
+          <Grid container spacing={0} sx={{ height: "100%", display: wsLoader ? "none" : "",  }}>
             <Grid
               size={{ xs: 12, sm: 12, md: 6 }}
               sx={{
