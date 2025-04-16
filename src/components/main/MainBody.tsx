@@ -213,7 +213,6 @@ export const MainBody = () => {
                 sx={{
                   height: "100%",
                   position: "relative",
-                  backgroundColor: "#000",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -225,10 +224,9 @@ export const MainBody = () => {
                   muted
                   playsInline
                   style={{
-                    width: "95%",
-                    height: "90%",
+                    width: "100%",
+                    height: "100%",
                     objectFit: "cover",
-                    borderRadius: "10px",
                   }}
                 />
                 <Box
@@ -262,7 +260,6 @@ export const MainBody = () => {
                 sx={{
                   height: "100%",
                   position: "relative",
-                  backgroundColor: "#111",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -270,16 +267,23 @@ export const MainBody = () => {
                   cursor: "pointer",
                 }}
               >
-                {remoteLoader && <GenericLoader />}
+                {remoteLoader && (
+                  <GenericLoader
+                    text={
+                      joinedUser.length === 1
+                        ? "Finding Someone you..."
+                        : "Connecting with other..."
+                    }
+                  />
+                )}
                 <video
                   ref={remoteVideoRef}
                   autoPlay
                   playsInline
                   style={{
-                    width: "95%",
-                    height: "90%",
+                    width: "100%",
+                    height: "100%",
                     objectFit: "cover",
-                    borderRadius: "10px",
                     display: remoteLoader ? "none" : "block",
                   }}
                 />
