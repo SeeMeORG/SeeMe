@@ -28,7 +28,7 @@ export const MainBody = () => {
   const wsLoader = useSelector(wsGlobalLoader);
 
   const [name, setUserName] = useState("");
-  const [targetName, setTargetName] = useState("");
+  const [targetName, setTargetName] = useState(null);
   const [remoteLoader, setRemoteLoader] = useState(true);
   const [hasPermissions, setPermissions] = useState(true);
 
@@ -117,7 +117,7 @@ export const MainBody = () => {
               peerRef.current = null;
             }
             setRemoteLoader(true);
-            setTargetName("");
+            setTargetName(null);
             socket.send(JSON.stringify({ type: "ready" }));
           }
 
@@ -318,7 +318,7 @@ export const MainBody = () => {
                     color={muiTheme.palette.background.paper}
                     fontWeight="bold"
                   >
-                    {!targetName ? "Friend": targetName}
+                    {targetName ?? "Friend"}
                   </Typography>
                 </Box>
               </Box>
