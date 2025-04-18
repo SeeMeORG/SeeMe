@@ -10,3 +10,8 @@ export interface IGenericAvatarProps {
   src: string;
   alt: string;
 }
+
+export interface IUser {
+  id: string;
+  available: boolean;
+}

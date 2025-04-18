@@ -1,20 +1,20 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Box, Button, Grid, TextField, Typography } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Form } from "react-router-dom";
 import Peer from "simple-peer";
+import { GenericLoader } from "../../shared/GenericComponents";
+import { IUser } from "../../shared/interface";
 import {
   joinedUser,
   setAvailableUsers,
   setJoindedUser,
   setTotalUsers,
   setWSLoader,
-  wsGlobalLoader,
+  wsGlobalLoader
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
-import { GenericLoader } from "../../shared/GenericComponents";
-import { Form } from "react-router-dom";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
@@ -123,11 +123,11 @@ export const MainBody = () => {
             const users = data?.clients ?? [];
 
             const otherUsers = users.filter(
-              (user: any) => user.id !== joinedUserName
+              (user: IUser) => user.id !== joinedUserName
             );
 
             const avail = otherUsers?.filter(
-              (user: any) => user?.available
+              (user: IUser) => user?.available
             )?.length;
 
             dispatch(setTotalUsers(otherUsers?.length ?? 0));
@@ -135,7 +135,7 @@ export const MainBody = () => {
           }
         };
       } catch (error) {
-        alert("Media error =>" + error);
+        console.error("Media error => ", error);
         setPermissions(false);
         dispatch(setWSLoader(false));
       }
@@ -206,7 +206,7 @@ export const MainBody = () => {
           alignItems="center"
         >
           <Typography variant="h4" color="error">
-            You don`t have required permissions.
+            Camera and Mike permissions are required.
           </Typography>
         </Box>
       ) : (
@@ -285,11 +285,7 @@ export const MainBody = () => {
               >
                 {remoteLoader && (
                   <GenericLoader
-                    text={
-                      joinedUser.length === 1
-                        ? "Finding someone for you..."
-                        : "Connecting with other..."
-                    }
+                    text="Finding someone for you..."
                   />
                 )}
                 <video
