@@ -6,6 +6,7 @@ export const muiTheme = createTheme({
     background: {
       default: "linear-gradient( #993996, #fa69f5, #91068d)",
       paper: "#fff",
+     
     },
     text: { primary: "#000000", secondary: "#ffffff", disabled: grey[800] },
     primary: {
@@ -19,6 +20,12 @@ export const muiTheme = createTheme({
       main: "#F58220",
       dark: "#AB5B16",
       contrastText: "#ffffff",
+    },
+    info: {
+      light: "#151b23",
+      main: "#121213",
+      dark: "#282828",
+      contrastText: "#000000",
     },
   },
   typography: {

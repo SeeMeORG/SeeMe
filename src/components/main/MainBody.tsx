@@ -165,8 +165,8 @@ export const MainBody = () => {
             justifyContent: "center",
             alignItems: "center",
             flexDirection: "column",
-            bgcolor: "#111",
-            color: "#fff",
+            bgcolor:muiTheme.palette.info.light,
+            color:muiTheme.palette.background.paper
           }}
         >
           <Typography variant="h4" gutterBottom>
@@ -257,7 +257,7 @@ export const MainBody = () => {
                     backdropFilter: "blur(6px)",
                   }}
                 >
-                  <Typography color="#fff" fontWeight="bold">
+                  <Typography color={muiTheme.palette.background.paper} fontWeight="bold">
                     You
                   </Typography>
                 </Box>
@@ -311,7 +311,7 @@ export const MainBody = () => {
                     backdropFilter: "blur(6px)",
                   }}
                 >
-                  <Typography color="#fff" fontWeight="bold">
+                  <Typography color={muiTheme.palette.background.paper} fontWeight="bold">
                     Friend
                   </Typography>
                 </Box>
