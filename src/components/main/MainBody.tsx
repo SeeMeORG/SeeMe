@@ -117,6 +117,7 @@ export const MainBody = () => {
               peerRef.current = null;
             }
             setRemoteLoader(true);
+            setTargetName("");
             socket.send(JSON.stringify({ type: "ready" }));
           }
 
@@ -317,7 +318,7 @@ export const MainBody = () => {
                     color={muiTheme.palette.background.paper}
                     fontWeight="bold"
                   >
-                    {targetName}
+                    {!targetName ? "Friend": targetName}
                   </Typography>
                 </Box>
               </Box>
