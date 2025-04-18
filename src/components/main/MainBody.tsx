@@ -9,6 +9,8 @@ import {
   setAvailableUsers,
   setJoindedUser,
   setTotalUsers,
+  setWSLoader,
+  wsGlobalLoader,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
 import { GenericLoader } from "../../shared/GenericComponents";
@@ -23,10 +25,11 @@ export const MainBody = () => {
   const peerRef = useRef<Peer.Instance | null>(null);
 
   const joinedUserName = useSelector(joinedUser);
+  const wsLoader = useSelector(wsGlobalLoader);
 
   const [name, setUserName] = useState("");
   const [remoteLoader, setRemoteLoader] = useState(true);
-  const [wsLoader, setWSLoader] = useState(true);
+  const [hasPermissions, setPermissions] = useState(true);
 
   const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
@@ -66,11 +69,11 @@ export const MainBody = () => {
           localVideoRef.current.srcObject = stream;
         }
 
-        setWSLoader(true);
+        dispatch(setWSLoader(true));
         socket = new WebSocket(SIGNAL_SERVER_URL);
 
         socket.onopen = () => {
-          setWSLoader(false);
+          dispatch(setWSLoader(false));
           socket.send(JSON.stringify({ type: "ready", name: joinedUserName }));
         };
 
@@ -133,6 +136,8 @@ export const MainBody = () => {
         };
       } catch (error) {
         alert("Media error =>" + error);
+        setPermissions(false);
+        dispatch(setWSLoader(false));
       }
     };
 
@@ -192,6 +197,17 @@ export const MainBody = () => {
               Join
             </Button>
           </Form>
+        </Box>
+      ) : !hasPermissions ? (
+        <Box
+          height="100%"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Typography variant="h4" color="error">
+            You don`t have required permissions.
+          </Typography>
         </Box>
       ) : (
         <Box sx={{ height: "100%", m: 0 }}>
@@ -271,7 +287,7 @@ export const MainBody = () => {
                   <GenericLoader
                     text={
                       joinedUser.length === 1
-                        ? "Finding Someone you..."
+                        ? "Finding someone for you..."
                         : "Connecting with other..."
                     }
                   />
