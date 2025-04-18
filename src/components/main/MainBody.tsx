@@ -12,7 +12,7 @@ import {
   setJoindedUser,
   setTotalUsers,
   setWSLoader,
-  wsGlobalLoader
+  wsGlobalLoader,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
@@ -28,6 +28,7 @@ export const MainBody = () => {
   const wsLoader = useSelector(wsGlobalLoader);
 
   const [name, setUserName] = useState("");
+  const [targetName, setTargetName] = useState("");
   const [remoteLoader, setRemoteLoader] = useState(true);
   const [hasPermissions, setPermissions] = useState(true);
 
@@ -37,7 +38,6 @@ export const MainBody = () => {
     });
 
     p.on("stream", (remoteStream) => {
-      alert("मनु जग्गी जिंदाबाद...");
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
       }
@@ -82,6 +82,7 @@ export const MainBody = () => {
 
           if (data.type === "start") {
             setRemoteLoader(true);
+            setTargetName(data.targetName);
             if (peerRef.current) {
               console.warn("Peer already exists, ignoring new start signal.");
               return;
@@ -165,8 +166,8 @@ export const MainBody = () => {
             justifyContent: "center",
             alignItems: "center",
             flexDirection: "column",
-            bgcolor:muiTheme.palette.info.light,
-            color:muiTheme.palette.background.paper
+            bgcolor: muiTheme.palette.info.light,
+            color: muiTheme.palette.background.paper,
           }}
         >
           <Typography variant="h4" gutterBottom>
@@ -257,7 +258,10 @@ export const MainBody = () => {
                     backdropFilter: "blur(6px)",
                   }}
                 >
-                  <Typography color={muiTheme.palette.background.paper} fontWeight="bold">
+                  <Typography
+                    color={muiTheme.palette.background.paper}
+                    fontWeight="bold"
+                  >
                     You
                   </Typography>
                 </Box>
@@ -284,9 +288,7 @@ export const MainBody = () => {
                 }}
               >
                 {remoteLoader && (
-                  <GenericLoader
-                    text="Finding someone for you..."
-                  />
+                  <GenericLoader text="Finding someone for you..." />
                 )}
                 <video
                   ref={remoteVideoRef}
@@ -311,8 +313,11 @@ export const MainBody = () => {
                     backdropFilter: "blur(6px)",
                   }}
                 >
-                  <Typography color={muiTheme.palette.background.paper} fontWeight="bold">
-                    Friend
+                  <Typography
+                    color={muiTheme.palette.background.paper}
+                    fontWeight="bold"
+                  >
+                    {targetName}
                   </Typography>
                 </Box>
               </Box>
