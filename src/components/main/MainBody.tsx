@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Box, Button, Grid, TextField, Typography } from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Form } from "react-router-dom";
 import Peer from "simple-peer";
@@ -31,8 +31,9 @@ export const MainBody = () => {
   const [targetName, setTargetName] = useState(null);
   const [remoteLoader, setRemoteLoader] = useState(true);
   const [hasPermissions, setPermissions] = useState(true);
+  const [socketConnection, setSocketConnection] = useState<WebSocket>();
 
-  const setupPeerEvents = (p: Peer.Instance, ws: WebSocket) => {
+  const setupPeerEvents = useCallback((p: Peer.Instance, ws: WebSocket) => {
     p.on("signal", (signalData) => {
       ws?.send(JSON.stringify({ type: "signal", signal: signalData }));
     });
@@ -51,7 +52,7 @@ export const MainBody = () => {
       console.warn("Peer connection closed");
       setRemoteLoader(true);
     });
-  };
+  }, []);
 
   useEffect(() => {
     if (!joinedUserName) return;
@@ -71,6 +72,8 @@ export const MainBody = () => {
 
         dispatch(setWSLoader(true));
         socket = new WebSocket(SIGNAL_SERVER_URL);
+
+        setSocketConnection(socket);
 
         socket.onopen = () => {
           dispatch(setWSLoader(false));
@@ -151,11 +154,27 @@ export const MainBody = () => {
     };
   }, [joinedUserName]);
 
-  const handleJoin = () => {
+  const handleJoin = useCallback(() => {
     if (name.trim()) {
       dispatch(setJoindedUser(name));
     }
-  };
+  }, [name]);
+
+  const handleNext = useCallback(() => {
+    if (peerRef.current) {
+      peerRef.current.destroy();
+      peerRef.current = null;
+    }
+
+    setRemoteLoader(true);
+    setTargetName(null);
+
+    if (socketConnection && socketConnection.readyState === WebSocket.OPEN) {
+      socketConnection.send(
+        JSON.stringify({ type: "ready", name: joinedUserName })
+      );
+    }
+  }, [socketConnection, joinedUserName]);
 
   return (
     <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
@@ -212,7 +231,7 @@ export const MainBody = () => {
           </Typography>
         </Box>
       ) : (
-        <Box sx={{ height: "100%", m: 0 }}>
+        <Box sx={{ height: "100%", m: 0, position: "relative" }}>
           {wsLoader && <GenericLoader text="Connecting to the server..." />}
           <Grid
             container
@@ -324,6 +343,21 @@ export const MainBody = () => {
 
             
           </Grid>
+          {joinedUserName && !wsLoader && !remoteLoader && (
+            <Box
+              sx={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                position: "absolute",
+                bottom: 10,
+              }}
+            >
+              <Button variant="contained" onClick={handleNext}>
+                Next
+              </Button>
+            </Box>
+          )}
         </Box>
       )}
     </Box>
