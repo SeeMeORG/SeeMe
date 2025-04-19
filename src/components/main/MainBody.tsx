@@ -340,10 +340,8 @@ export const MainBody = () => {
                 </Box>
               </Box>
             </Grid>
-
-            
           </Grid>
-          {joinedUserName && !wsLoader && !remoteLoader && (
+          {joinedUserName && !wsLoader && (
             <Box
               sx={{
                 width: "100%",
@@ -353,7 +351,11 @@ export const MainBody = () => {
                 bottom: 10,
               }}
             >
-              <Button variant="contained" onClick={handleNext}>
+              <Button
+                variant="contained"
+                disabled={remoteLoader}
+                onClick={handleNext}
+              >
                 Next
               </Button>
             </Box>
