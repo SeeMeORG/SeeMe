@@ -1,6 +1,5 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { RefObject } from "react";
-import { muiTheme } from "../style/muiTheme";
 import { GenericLoader } from "../shared/GenericComponents";
 
 interface VideoBoxProps {
@@ -12,13 +11,19 @@ interface VideoBoxProps {
 
 export const GVideo = ({
   videoRef,
-  label,
   isLoading = false,
   isMuted = false,
 }: VideoBoxProps) => {
   return (
     <Box
-     
+      sx={{
+        height: "100%",
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
     >
       {isLoading && <GenericLoader text="Finding someone for you..." />}
       <video
@@ -33,25 +38,6 @@ export const GVideo = ({
           display: isLoading ? "none" : "block",
         }}
       />
-      <Box
-        position="absolute"
-        bottom={80}
-        left={12}
-        bgcolor={muiTheme.palette.info.light}
-        px={2}
-        py={0.5}
-        borderRadius={2}
-        sx={{
-          backdropFilter: "blur(6px)",
-        }}
-      >
-        <Typography
-          color={muiTheme.palette.background.paper}
-          fontWeight="bold"
-        >
-          {label}
-        </Typography>
-      </Box>
     </Box>
   );
 };

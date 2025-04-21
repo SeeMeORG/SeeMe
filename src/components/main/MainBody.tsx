@@ -15,6 +15,7 @@ import {
   wsGlobalLoader,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
+import { GVideo } from "../../shared/GVideo";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
@@ -23,10 +24,8 @@ export const MainBody = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
-
   const joinedUserName = useSelector(joinedUser);
   const wsLoader = useSelector(wsGlobalLoader);
-
   const [name, setUserName] = useState("");
   const [targetName, setTargetName] = useState(null);
   const [remoteLoader, setRemoteLoader] = useState(true);
@@ -72,7 +71,6 @@ export const MainBody = () => {
 
         dispatch(setWSLoader(true));
         socket = new WebSocket(SIGNAL_SERVER_URL);
-
         setSocketConnection(socket);
 
         socket.onopen = () => {
@@ -165,7 +163,6 @@ export const MainBody = () => {
       peerRef.current.destroy();
       peerRef.current = null;
     }
-
     setRemoteLoader(true);
     setTargetName(null);
 
@@ -256,19 +253,11 @@ export const MainBody = () => {
                   overflow: "hidden",
                 }}
               >
-                {remoteLoader && (
-                  <GenericLoader text="Finding someone for you..." />
-                )}
-                <video
-                  ref={remoteVideoRef}
-                  autoPlay
-                  playsInline
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                    display: remoteLoader ? "none" : "block",
-                  }}
+               
+                <GVideo
+                  videoRef={remoteVideoRef}
+                  label={targetName ?? "Friend"}
+                  isLoading={remoteLoader}
                 />
                 <Box
                   position="absolute"
@@ -308,17 +297,8 @@ export const MainBody = () => {
                   justifyContent: "center",
                 }}
               >
-                <video
-                  ref={localVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
+                <GVideo videoRef={localVideoRef} label="You" isMuted />
+
                 <Box
                   position="absolute"
                   bottom={80}
