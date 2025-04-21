@@ -119,7 +119,9 @@ export const MainBody = () => {
             }
             setRemoteLoader(true);
             setTargetName(null);
-            socket.send(JSON.stringify({ type: "ready" }));
+            socket.send(
+              JSON.stringify({ type: "ready", name: joinedUserName })
+            );
           }
 
           if (data.type === "updateUsers") {
@@ -251,7 +253,6 @@ export const MainBody = () => {
                   overflow: "hidden",
                 }}
               >
-               
                 <GVideo
                   videoRef={remoteVideoRef}
                   label={targetName ?? "Friend"}
