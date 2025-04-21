@@ -167,11 +167,9 @@ export const MainBody = () => {
     setTargetName(null);
 
     if (socketConnection && socketConnection.readyState === WebSocket.OPEN) {
-      socketConnection.send(
-        JSON.stringify({ type: "ready", name: joinedUserName })
-      );
+      socketConnection.send(JSON.stringify({ type: "next" }));
     }
-  }, [socketConnection, joinedUserName]);
+  }, [socketConnection]);
 
   return (
     <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
