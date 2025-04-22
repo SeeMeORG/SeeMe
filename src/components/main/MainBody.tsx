@@ -20,7 +20,6 @@ const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
   const dispatch = useDispatch();
-
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
@@ -104,14 +103,12 @@ export const MainBody = () => {
               console.warn("No active peer for signal, ignoring.");
               return;
             }
-
             try {
               peerRef.current.signal(data.signal);
             } catch (err) {
               console.error("Failed to apply signal:", err);
             }
           }
-
           if (data.type === "partner_disconnected") {
             if (peerRef.current) {
               peerRef.current.destroy();

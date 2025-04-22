@@ -51,5 +51,12 @@ export const muiTheme = createTheme({
         },
       },
     },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none', 
+        },
+      },
+    },
   },
 });
