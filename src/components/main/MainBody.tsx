@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Form } from "react-router-dom";
 import Peer from "simple-peer";
 import { GenericLoader } from "../../shared/GenericComponents";
+import { GVideo } from "../../shared/GVideo";
 import { IUser } from "../../shared/interface";
 import {
   joinedUser,
@@ -15,7 +16,6 @@ import {
   wsGlobalLoader,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
-import { GVideo } from "../../shared/GVideo";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
@@ -116,9 +116,9 @@ export const MainBody = () => {
             }
             setRemoteLoader(true);
             setTargetName(null);
-            socket.send(
-              JSON.stringify({ type: "ready", name: joinedUserName })
-            );
+            // socket.send(
+            //   JSON.stringify({ type: "ready", name: joinedUserName })
+            // );
           }
 
           if (data.type === "updateUsers") {
