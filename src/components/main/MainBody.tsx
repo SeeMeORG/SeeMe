@@ -16,6 +16,7 @@ import {
   wsGlobalLoader,
 } from "../../store/userSlice";
 import { muiTheme } from "../../style/muiTheme";
+import { StyledNameContainer } from "../../style/CommonStyles";
 const SIGNAL_SERVER_URL = import.meta.env.VITE_API_URL;
 
 export const MainBody = () => {
@@ -189,17 +190,7 @@ export const MainBody = () => {
   return (
     <Box sx={{ height: "calc(100vh - 66px)", m: 0 }}>
       {!joinedUserName ? (
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
-            bgcolor: muiTheme.palette.info.light,
-            color: muiTheme.palette.background.paper,
-          }}
-        >
+        <StyledNameContainer>
           <Typography variant="h4" gutterBottom>
             Enter Your Name
           </Typography>
@@ -243,7 +234,7 @@ export const MainBody = () => {
               Join
             </Button>
           </Form>
-        </Box>
+        </StyledNameContainer>
       ) : !hasPermissions ? (
         <Box
           height="100%"
@@ -263,90 +254,12 @@ export const MainBody = () => {
             spacing={0}
             sx={{ height: "100%", display: wsLoader ? "none" : "" }}
           >
-            <Grid
-              size={{ xs: 12, sm: 12, md: 6 }}
-              sx={{
-                border: "2px solid",
-                borderColor: "primary.main",
-                height: { xs: "50%", sm: "50%", md: "100%" },
-              }}
-            >
-              <Box
-                sx={{
-                  height: "100%",
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                }}
-              >
-                <GVideo
-                  videoRef={remoteVideoRef}
-                  label={targetName ?? "Friend"}
-                  isLoading={remoteLoader}
-                />
-                <Box
-                  position="absolute"
-                  bottom={80}
-                  left={12}
-                  bgcolor={muiTheme.palette.info.light}
-                  px={2}
-                  py={0.5}
-                  borderRadius={2}
-                  sx={{
-                    backdropFilter: "blur(6px)",
-                  }}
-                >
-                  <Typography
-                    color={muiTheme.palette.background.paper}
-                    fontWeight="bold"
-                  >
-                    {targetName ?? "Friend"}
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
-            <Grid
-              size={{ xs: 12, sm: 12, md: 6 }}
-              sx={{
-                border: "2px solid",
-                borderColor: "primary.main",
-                height: { xs: "50%", sm: "50%", md: "100%" },
-              }}
-            >
-              <Box
-                sx={{
-                  height: "100%",
-                  position: "relative",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <GVideo videoRef={localVideoRef} label="You" isMuted />
-
-                <Box
-                  position="absolute"
-                  bottom={80}
-                  left={12}
-                  bgcolor={muiTheme.palette.info.light}
-                  px={2}
-                  py={0.5}
-                  borderRadius={2}
-                  sx={{
-                    backdropFilter: "blur(6px)",
-                  }}
-                >
-                  <Typography
-                    color={muiTheme.palette.background.paper}
-                    fontWeight="bold"
-                  >
-                    You
-                  </Typography>
-                </Box>
-              </Box>
-            </Grid>
+            <GVideo
+              videoRef={remoteVideoRef}
+              label={targetName ?? "Friend"}
+              isLoading={remoteLoader}
+            />
+            <GVideo isMuted videoRef={localVideoRef} label="You" />
           </Grid>
           {joinedUserName && !wsLoader && (
             <Box

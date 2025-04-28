@@ -1,4 +1,4 @@
-import { Dispatch } from "react";
+import { Dispatch, RefObject } from "react";
 
 export interface IWelcomeProps {
   setWelcome: Dispatch<React.SetStateAction<boolean>>;
@@ -14,4 +14,11 @@ export interface IGenericAvatarProps {
 export interface IUser {
   id: string;
   available: boolean;
+}
+
+export interface IGVideoProps {
+  videoRef: RefObject<HTMLVideoElement | null>;
+  label?: string | null;
+  isLoading?: boolean;
+  isMuted?: boolean;
 }
