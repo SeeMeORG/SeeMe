@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import { Box, Button, Grid, TextField, Typography } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Form } from "react-router-dom";
 import Peer from "simple-peer";
@@ -23,12 +23,15 @@ export const MainBody = () => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const peerRef = useRef<Peer.Instance | null>(null);
+
   const joinedUserName = useSelector(joinedUser);
   const wsLoader = useSelector(wsGlobalLoader);
+
   const [name, setUserName] = useState("");
   const [targetName, setTargetName] = useState(null);
   const [remoteLoader, setRemoteLoader] = useState(true);
   const [hasPermissions, setPermissions] = useState(true);
+  const [enableValidation, setEnableValidation] = useState(false);
   const [socketConnection, setSocketConnection] = useState<WebSocket>();
 
   const setupPeerEvents = useCallback((p: Peer.Instance, ws: WebSocket) => {
@@ -116,9 +119,6 @@ export const MainBody = () => {
             }
             setRemoteLoader(true);
             setTargetName(null);
-            // socket.send(
-            //   JSON.stringify({ type: "ready", name: joinedUserName })
-            // );
           }
 
           if (data.type === "updateUsers") {
@@ -152,10 +152,26 @@ export const MainBody = () => {
   }, [joinedUserName]);
 
   const handleJoin = useCallback(() => {
-    if (name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName?.length) {
+      setEnableValidation(true);
+    }
+
+    if (trimmedName) {
       dispatch(setJoindedUser(name));
     }
   }, [name]);
+
+  const handleChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val?.length) {
+      setEnableValidation(true);
+    } else {
+      setEnableValidation(false);
+    }
+
+    setUserName(val);
+  }, []);
 
   const handleNext = useCallback(() => {
     if (peerRef.current) {
@@ -196,18 +212,33 @@ export const MainBody = () => {
               flexDirection: "column",
             }}
           >
-            <TextField
-              autoFocus
-              variant="outlined"
-              placeholder="Enter Your Name"
-              value={name}
-              onChange={(e) => setUserName(e.target.value)}
+            <Box
               sx={{
-                bgcolor: muiTheme.palette.text.secondary,
-                borderRadius: 1,
-                mb: 2,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                flexDirection: "column",
               }}
-            />
+              mb={2}
+            >
+              <TextField
+                autoFocus
+                variant="outlined"
+                placeholder="Enter Your Name"
+                error={enableValidation}
+                value={name}
+                onChange={handleChange}
+                sx={{
+                  bgcolor: muiTheme.palette.text.secondary,
+                  borderRadius: 1,
+                }}
+              />
+              {enableValidation && (
+                <Typography variant="caption" color="error">
+                  Name is required.
+                </Typography>
+              )}
+            </Box>
             <Button type="submit" variant="contained" color="primary">
               Join
             </Button>
